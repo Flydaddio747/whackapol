@@ -1003,7 +1003,7 @@ alignmentLabel.textContent = label;alignmentLabel.textContent = label;
   // Breakdown detail
     const partyNames = {republican:'GOP', democrat:'DEM', independent:'IND', none:'None'};
   const partyQ = playerParty ? partyNames[playerParty] || 'None' : 'Skipped';
-  breakdownDetail.innerHTML = `Whacks: ${total} | Your REAL party: ${partyQ}`;
+  breakdownDetail.innerHTML = `Whacks: ${total} | You identified as: ${partyQ}`;
 
   // Alignment bars
   alignmentBars.innerHTML = `
