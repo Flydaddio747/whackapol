@@ -850,16 +850,21 @@ function getRoastMessage(scores, playerParty){
       return {msg: "You whacked everyone equally!", sub: "Truly bipartisan chaos.", icon: "🤝"};
     }
     
-    // Self-whacks = 0 (perfect opposition)
-    if(selfCnt === 0){
-      if(iCnt === 0) return {msg: "You're 100% " + pName + "!", sub: "Every single whack was on the opposition. Outstanding! Keen eye!", icon: "🎯"};
-      return {msg: "You're a loyal " + pName + "!", sub: "Great job on the opposition! But why whack Independents? We need them on our side!", icon: "🎯"};
-    }
-    
-    // They whacked their own party - give hell!
+        // Check: mostly opposition or mostly own party?
     const selfPct = Math.round((selfCnt / total) * 100);
+
+    if(oppCnt > selfCnt){
+      // Mostly opposition - praise then gentle aim note
+      if(selfCnt === 0){
+        if(iCnt === 0) return {msg: "You're 100% " + pName + "!", sub: "Every single whack was on the opposition. Outstanding! Keen eye!", icon: "🎯"};
+        return {msg: "Great job, " + pName + "!", sub: "Excellent work on the opposition! But why hit Independents? Leave them alone!", icon: "🎯"};
+      }
+      return {msg: "Great job, " + pName + "!", sub: "Excellent aim! But you accidentally hit " + selfCnt + " of your own. Be more careful next time, " + pName + ".", icon: "🎯"};
+    }
+
+    // Whacked mostly own party - give hell!
     let msg, sub, icon;
-    
+
     if(selfPct >= 80){
       msg = selfCnt + " whacks on your own party?! You're a TRAITOR, " + pName + "!";
       sub = selfPct + "% friendly fire. The party chair wants a word.";
@@ -874,7 +879,7 @@ function getRoastMessage(scores, playerParty){
       icon = "😒";
     } else {
       msg = selfCnt + " accidental whacks of your own party. Tsk tsk.";
-      sub = "It happens. Just don\'t let it happen again, " + pName + ".";
+      sub = "It happens. Just don't let it happen again, " + pName + ".";
       icon = "😐";
     }
     return {msg: msg, sub: sub, icon: icon};
