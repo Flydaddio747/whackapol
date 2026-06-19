@@ -348,6 +348,13 @@ body{
     <div style="font-size:0.85rem;color:#ccccee;margin-bottom:8px;line-height:1.4;padding:0 10px;" id="roastSub"></div>
     <div class="breakdown-detail" id="breakdownDetail"></div>
     <div id="alignmentBars"></div>
+    <div id="lbSubmit" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);display:none">
+      <div style="font-size:0.8rem;font-weight:700;margin-bottom:8px;color:#9999cc">🏆 Submit to Leaderboard</div>
+      <input id="nicknameInput" type="text" placeholder="Your nickname" maxlength="20" style="width:100%;padding:8px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:0.85rem;text-align:center;outline:none;box-sizing:border-box;margin-bottom:6px">
+      <input id="emailInput" type="email" placeholder="Email (optional)" maxlength="80" style="width:100%;padding:8px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:0.85rem;text-align:center;outline:none;box-sizing:border-box;margin-bottom:8px">
+      <button id="submitScoreBtn" style="width:100%;padding:8px 0;border-radius:30px;border:none;background:linear-gradient(135deg,#6633cc,#aa44ff);color:#fff;font-size:0.85rem;font-weight:700;cursor:pointer;touch-action:manipulation">⬆ Submit Score</button>
+      <div id="submitStatus" style="font-size:0.75rem;color:#8888bb;margin-top:6px;text-align:center"></div>
+    </div>
     </div>
   <div class="end-buttons">
     <button class="play-again-btn" id="playAgainBtn">▶&nbsp; PLAY AGAIN</button>
@@ -1138,17 +1145,19 @@ alignmentLabel.textContent = label;alignmentLabel.textContent = label;
     });
   });
 
-  // Save to leaderboard
-  try {
-    var entries = JSON.parse(localStorage.getItem('wap_lb') || '[]');
-    var tw = state ? (state.scores.republican + state.scores.democrat + state.scores.independent) : 0;
-    if(tw > 0){
-      entries.push({score:tw, r:rPct, d:dPct, i:iPct, date:new Date().toISOString()});
-      entries.sort(function(a,b){ return b.score - a.score; });
-      if(entries.length > 50) entries = entries.slice(0,50);
-      localStorage.setItem('wap_lb', JSON.stringify(entries));
-    }
-  } catch(e){}
+  // Show leaderboard submit section
+  var lbSubmit = document.getElementById('lbSubmit');
+  var nicknameInput = document.getElementById('nicknameInput');
+  var emailInput = document.getElementById('emailInput');
+  var submitStatus = document.getElementById('submitStatus');
+  var submitBtn = document.getElementById('submitScoreBtn');
+  if(lbSubmit){
+    lbSubmit.style.display = 'block';
+    if(nicknameInput) nicknameInput.value = '';
+    if(emailInput) emailInput.value = '';
+    if(submitStatus) submitStatus.textContent = '';
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '⬆ Submit Score'; }
+  }
 }
 
 
@@ -1210,38 +1219,105 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
   var viewLbBtn = id('viewLbBtn');
   var endScreen = id('endScreen');
   var lbScreen = id('leaderboardScreen');
+  var submitBtn = id('submitScoreBtn');
+  var nicknameIn = id('nicknameInput');
+  var emailIn = id('emailInput');
+  var submitArea = id('lbSubmit');
+  var submitStatus = id('submitStatus');
+
+  var LB_API = 'http://192.168.1.126:3456';
+
+  function submitScore(){
+    if(!submitBtn || submitBtn.disabled) return;
+    if(!window.state || !window.state.scores) return;
+    var nickname = (nicknameIn ? nicknameIn.value.trim() : '') || 'Anonymous';
+    var email = emailIn ? emailIn.value.trim() : '';
+    var s = window.state.scores;
+    var total = s.republican + s.democrat + s.independent;
+    if(total === 0){ submitStatus.textContent = 'Whack someone first!'; return; }
+    var playerParty = window.playerParty || 'none';
+    var selfCnt = (playerParty && playerParty !== 'none') ? (s[playerParty] || 0) : 0;
+    var oppCnt = total - selfCnt;
+    var loyalty = total > 0 ? Math.round((oppCnt / total) * 1000) / 10 : 0;
+    var score = Math.round(total * (loyalty / 100) * 1.5 + (total * loyalty / 200));
+    var partyLabel = {republican:'R', democrat:'D', independent:'I', none:'--'};
+    var party = partyLabel[playerParty] || '--';
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    submitStatus.textContent = '';
+
+    fetch(LB_API + '/api/score', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        nickname: nickname,
+        party: party,
+        whacks: total,
+        loyalty: loyalty,
+        score: score,
+        email: email
+      })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if(d.ok){
+        submitStatus.innerHTML = '<span style="color:#66dd88">✓ Rank #' + d.rank + ' of ' + d.total + '</span>';
+        if(submitArea) submitArea.style.display = 'none';
+      } else {
+        submitStatus.textContent = 'Error: ' + (d.error || 'unknown');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '⬆ Submit Score';
+      }
+    }).catch(function(e){
+      submitStatus.textContent = 'Could not reach server. Try again later.';
+      submitBtn.disabled = false;
+      submitBtn.textContent = '⬆ Submit Score';
+    });
+  }
+
   function renderLeaderboard(){
     var el = id('lbContent');
     if(!el) return;
-    try {
-      var entries = JSON.parse(localStorage.getItem('wap_lb') || '[]');
-      if(!entries.length){
-        el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">No leaderboard entries yet. Play a game!</div>';
-        return;
-      }
-      entries.sort(function(a,b){ return b.score - a.score; });
-      var h = '<div style="display:flex;flex-direction:column;gap:4px">';
-      var medals = ['🥇','🥈','🥉'];
-      for(var i=0; i<Math.min(10, entries.length); i++){
-        var e = entries[i];
-        var rank = i < 3 ? medals[i] : '#'+(i+1);
-        h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(255,255,255,0.03);border-radius:8px">';
-        h += '<span style="font-size:0.85rem">'+rank+' <span style="color:#aaaacc">'+e.score+' whacks</span></span>';
-        h += '<span style="font-size:0.75rem;color:#666688">'+e.r+'%/'+e.d+'%/'+e.i+'%</span>';
+    el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">Loading...</div>';
+    fetch(LB_API + '/api/leaderboard')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var entries = d.leaderboard || [];
+        if(!entries.length){
+          el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">No leaderboard entries yet. Play a game!</div>';
+          return;
+        }
+        var h = '<div style="display:flex;flex-direction:column;gap:4px">';
+        var medals = ['🥇','🥈','🥉'];
+        for(var i=0; i<Math.min(50, entries.length); i++){
+          var e = entries[i];
+          var rank = i < 3 ? medals[i] : '#'+(i+1);
+          var partyDot = '';
+          if(e.party === 'R') partyDot = '<span style="color:#ff4444">●</span> ';
+          else if(e.party === 'D') partyDot = '<span style="color:#4488ff">●</span> ';
+          else if(e.party === 'I') partyDot = '<span style="color:#bb66ff">●</span> ';
+          h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:rgba(255,255,255,0.03);border-radius:8px">';
+          h += '<span style="font-size:0.85rem">'+rank+' '+partyDot+'<span style="color:#ddd">'+e.nickname+'</span> <span style="color:#666688;font-size:0.7rem">'+e.score+'pts</span></span>';
+          h += '<span style="font-size:0.7rem;color:#666688">'+e.whacks+'wh · '+e.loyalty+'%</span>';
+          h += '</div>';
+        }
+        h += '<div style="text-align:center;font-size:0.65rem;color:#555577;margin-top:8px">'+d.count+' total entries</div>';
         h += '</div>';
-      }
-      h += '</div>';
-      el.innerHTML = h;
-    } catch(e){
-      el.innerHTML = '<div style="color:red">Error loading leaderboard</div>';
-    }
+        el.innerHTML = h;
+      })
+      .catch(function(){
+        el.innerHTML = '<div style="text-align:center;color:#ff6666;font-size:0.85rem;padding:20px">⚠ Could not load leaderboard</div>';
+      });
   }
+
   if(viewLbBtn && endScreen && lbScreen){
     viewLbBtn.addEventListener('click', function(){
       endScreen.classList.remove('active');
       lbScreen.classList.add('active');
       renderLeaderboard();
     });
+  }
+  if(submitBtn){
+    submitBtn.addEventListener('click', submitScore);
   }
 })();
 </script>
