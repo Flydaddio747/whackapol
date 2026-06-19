@@ -833,6 +833,20 @@ function startGame(){
 // ===== ROAST MESSAGES =====
 function getRoastMessage(scores, playerParty){
   const total = scores.republican + scores.democrat + scores.independent || 1;
+  
+  // Whacked the opposition = proving loyalty
+  if(playerParty && playerParty !== 'none' && total >= 3){
+    var myVal = scores[playerParty] || 0;
+    var oppVal = total - myVal;
+    if(oppVal > myVal){
+      var pName = {republican:'Republican', democrat:'Democrat', independent:'Independent'}[playerParty];
+      var oName = {republican:'Democrats', democrat:'Republicans', independent:'the establishment'}[playerParty];
+      if(oppVal >= total * 0.7){
+        return {msg: "Now THAT is loyalty!", sub: "As a " + pName + ", you opposed the " + oName + " " + Math.round(oppVal/total*100) + "% of the time.", icon: "\uD83C\uDFAF"};
+      }
+      return {msg: "Good work opposing the " + oName + "!", sub: "You opposed the " + oName + " more than your own party. That's the job.", icon: "\uD83C\uDFAF"};
+    }
+  }
   var rPct = Math.round((scores.republican / total) * 100);
   var dPct = Math.round((scores.democrat / total) * 100);
   var iPct = Math.round((scores.independent / total) * 100);
@@ -911,15 +925,6 @@ if(whackedAllEqual && total >= 9){
       return {msg: "You abandoned your party entirely!", sub: `Zero ${playerParty} whacks. The party chair is disappointed.`, icon: '🏃'};
     }
     
-    if(playerParty !== 'none' && total >= 5){
-      var pn = {republican:'Republican', democrat:'Democrat', independent:'Independent'}[playerParty];
-      var on = {republican:'Democrats', democrat:'Republicans', independent:'the establishment'}[playerParty];
-      var opp = total - (scores[playerParty] || 0);
-      if(opp > (scores[playerParty] || 0) && opp >= total * 0.6){
-        return {msg: "Good job! You whacked the opposition!", sub: "As a " + pn + ", you took out " + opp + " " + on + ". That is loyalty.", icon: "🎯"};
-      }
-    }
-    
     if(playerParty !== 'none' && selfWhacks >= maxPossible){
       return {msg: "Did you even see anyone else?", sub: `You whacked all ${maxPossible} ${playerParty}s. Maybe look around next time.`, icon: '👁️'};
     }
@@ -966,14 +971,20 @@ function showEndScreen(){
   endScreen.classList.add('active');
 
   const s = state.scores;
-  const total = state.totalWhacks || 1; // prevent div by zero
+  const total = state.totalWhacks || 1;
 
-  const rPct = Math.round((s.republican / total) * 100);
-  const dPct = Math.round((s.democrat / total) * 100);
-  const iPct = Math.round((s.independent / total) * 100);
+  // ALIGNMENT: opposing X = being against X = alignment opposite
+  const aR = s.democrat;    // Dems opposed = Republican alignment
+  const aD = s.republican;  // GOP opposed = Democrat alignment
+  const aI = s.independent; // IND opposed stays IND
+  const aTotal = aR + aD + aI || 1;
 
-  // Get roast based on whacks vs stated party
-  const roast = getRoastMessage(s, playerParty);
+  const rPct = Math.round((aR / aTotal) * 100);
+  const dPct = Math.round((aD / aTotal) * 100);
+  const iPct = Math.round((aI / aTotal) * 100);
+
+  // Get roast using alignment values
+  const roast = getRoastMessage({republican:aR, democrat:aD, independent:aI}, playerParty);
 
   // Determine alignment label
   let label, alignParty;
@@ -992,7 +1003,7 @@ function showEndScreen(){
     alignParty = 'Bipartisan';
   }
 
-    alignmentLabel.textContent = roast.msg;
+    alignmentLabel.textContent = label;
   document.getElementById('roastSub').innerHTML = roast.sub;
   document.getElementById('roastIcon').textContent = roast.icon;
 
@@ -1005,17 +1016,17 @@ function showEndScreen(){
   alignmentBars.innerHTML = `
     <div class="alignment-bar red">
       <span class="label">GOP</span>
-      <div class="track"><div class="fill" style="width:${rPct}%">${s.republican}</div></div>
+      <div class="track"><div class="fill" style="width:${rPct}%">${aR}</div></div>
       <span class="pct">${rPct}%</span>
     </div>
     <div class="alignment-bar blue">
       <span class="label">DEM</span>
-      <div class="track"><div class="fill" style="width:${dPct}%">${s.democrat}</div></div>
+      <div class="track"><div class="fill" style="width:${dPct}%">${aD}</div></div>
       <span class="pct">${dPct}%</span>
     </div>
     <div class="alignment-bar purple">
       <span class="label">IND</span>
-      <div class="track"><div class="fill" style="width:${iPct}%">${s.independent}</div></div>
+      <div class="track"><div class="fill" style="width:${iPct}%">${aI}</div></div>
       <span class="pct">${iPct}%</span>
     </div>
   `;
