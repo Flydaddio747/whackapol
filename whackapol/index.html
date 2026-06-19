@@ -913,35 +913,43 @@ function showEndScreen(){
   const s = state.scores;
   const total = state.totalWhacks || 1;
 
-  // ALIGNMENT: opposing X = being against X = alignment opposite
+    // Raw whack data for bars (receipts)
   const aR = s.republican;
   const aD = s.democrat;
   const aI = s.independent;
   const aTotal = aR + aD + aI || 1;
-
   const rPct = Math.round((aR / aTotal) * 100);
   const dPct = Math.round((aD / aTotal) * 100);
   const iPct = Math.round((aI / aTotal) * 100);
 
-  // Get roast using alignment values
-  const roast = getRoastMessage({republican:aR, democrat:aD, independent:aI}, playerParty);
+  // Alignment for proclamation: whacking opposition proves YOUR party loyalty
+  const alignR = s.democrat;    // Dems whacked = Republican alignment
+  const alignD = s.republican;  // GOP whacked = Democrat alignment
+  const alignI = s.independent;
+  const alignTotal = alignR + alignD + alignI || 1;
+  const rAlign = Math.round((alignR / alignTotal) * 100);
+  const dAlign = Math.round((alignD / alignTotal) * 100);
+  const iAlign = Math.round((alignI / alignTotal) * 100);
 
-  // Determine alignment label
+  // Get roast (uses RAW scores for friendly fire detection)
+  const roast = getRoastMessage(s, playerParty);
+
+  // Determine alignment label (whacking opposition = proving loyalty to YOUR party)
   let label, alignParty;
-  if(rPct > dPct && rPct > iPct){
-    label = `You're ${rPct}% Republican`;
+  if(rAlign > dAlign && rAlign > iAlign){
+    label = `You're ${rAlign}% Republican!`;
     alignParty = 'Republican';
-  } else if(dPct > rPct && dPct > iPct){
-    label = `You're ${dPct}% Democrat`;
+  } else if(dAlign > rAlign && dAlign > iAlign){
+    label = `You're ${dAlign}% Democrat!`;
     alignParty = 'Democrat';
-  } else if(iPct > rPct && iPct > dPct){
-    label = `You're ${iPct}% Independent`;
+  } else if(iAlign > rAlign && iAlign > dAlign){
+    label = `You're ${iAlign}% Independent!`;
     alignParty = 'Independent';
   } else {
-    // Tie
-    label = 'You\'re Bipartisan!';
+    label = "You're Bipartisan!";
     alignParty = 'Bipartisan';
   }
+
 
     alignmentLabel.textContent = label;
   document.getElementById('roastSub').innerHTML = roast.sub;
