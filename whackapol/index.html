@@ -934,24 +934,64 @@ function showEndScreen(){
   // Get roast (uses RAW scores for friendly fire detection)
   const roast = getRoastMessage(s, playerParty);
 
-  // Determine alignment label (whacking opposition = proving loyalty to YOUR party)
+    // Determine proclamation: did they whack the opposition or their own party?
   let label, alignParty;
-  if(rAlign > dAlign && rAlign > iAlign){
-    label = `You're ${rAlign}% Republican!`;
-    alignParty = 'Republican';
-  } else if(dAlign > rAlign && dAlign > iAlign){
-    label = `You're ${dAlign}% Democrat!`;
-    alignParty = 'Democrat';
-  } else if(iAlign > rAlign && iAlign > dAlign){
-    label = `You're ${iAlign}% Independent!`;
-    alignParty = 'Independent';
+  if(playerParty && playerParty !== 'none'){
+    const selfCnt = s[playerParty] || 0;
+    const oppCnt = total - selfCnt;
+    
+    if(oppCnt > selfCnt){
+      // Whacked mostly opposition = celebrate with inverted alignment
+      const alignR = s.democrat;    // Dems whacked = Republican alignment
+      const alignD = s.republican;  // GOP whacked = Democrat alignment
+      const alignI = s.independent;
+      const alignTotal = alignR + alignD + alignI || 1;
+      const rAlign = Math.round((alignR / alignTotal) * 100);
+      const dAlign = Math.round((alignD / alignTotal) * 100);
+      const iAlign = Math.round((alignI / alignTotal) * 100);
+      
+      if(rAlign > dAlign && rAlign > iAlign){
+        label = `You're ${rAlign}% Republican!`;
+        alignParty = 'Republican';
+      } else if(dAlign > rAlign && dAlign > iAlign){
+        label = `You're ${dAlign}% Democrat!`;
+        alignParty = 'Democrat';
+      } else if(iAlign > rAlign && iAlign > dAlign){
+        label = `You're ${iAlign}% Independent!`;
+        alignParty = 'Independent';
+      } else {
+        label = "You're Bipartisan!";
+        alignParty = 'Bipartisan';
+      }
+    } else {
+      // Whacked mostly own party = friendly fire roast
+      const selfPct = Math.round((selfCnt / total) * 100);
+      if(selfPct >= 80){
+        label = selfCnt + " whacks on your own party?! You're a TRAITOR!";
+      } else if(selfPct >= 50){
+        label = selfCnt + " of " + total + " whacks were your own side?!";
+      } else {
+        label = selfCnt + " friendly fire whacks. Embarrassing.";
+      }
+      alignParty = null;
+    }
   } else {
-    label = "You're Bipartisan!";
-    alignParty = 'Bipartisan';
+    // No party selected - show raw data
+    if(rPct > dPct && rPct > iPct){
+      label = `You whacked ${rPct}% Republicans!`;
+      alignParty = 'Republican';
+    } else if(dPct > rPct && dPct > iPct){
+      label = `You whacked ${dPct}% Democrats!`;
+      alignParty = 'Democrat';
+    } else if(iPct > rPct && iPct > dPct){
+      label = `You whacked ${iPct}% Independents!`;
+      alignParty = 'Independent';
+    } else {
+      label = "You whacked everyone equally!";
+      alignParty = 'Bipartisan';
+    }
   }
-
-
-    alignmentLabel.textContent = label;
+alignmentLabel.textContent = label;
   document.getElementById('roastSub').innerHTML = roast.sub;
   document.getElementById('roastIcon').textContent = roast.icon;
 
