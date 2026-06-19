@@ -862,31 +862,6 @@ function getRoastMessage(scores, playerParty){
   const whackedAllEqual = isTie && whackedAll;
   
 
-  // ===== Opposition roasts =====
-  if(playerParty && playerParty !== 'none' && total >= 5){
-    var selfVal = scores[playerParty] || 0;
-    var otherMax = 0;
-    if(playerParty === 'republican') otherMax = Math.max(scores.democrat, scores.independent);
-    else if(playerParty === 'democrat') otherMax = Math.max(scores.republican, scores.independent);
-    else otherMax = Math.max(scores.republican, scores.democrat);
-    if(selfVal > otherMax && selfVal >= total * 0.6){
-      var pLabel, oLabel;
-      if(playerParty === 'republican'){ pLabel = 'GOP'; oLabel = 'Democrats'; }
-      else if(playerParty === 'democrat'){ pLabel = 'Democrat'; oLabel = 'Republicans'; }
-      else { pLabel = 'Independent'; oLabel = 'the establishment'; }
-      if(total >= 10)
-        return {msg: "Now THAT is how you whack the opposition!", sub: "As a " + pLabel + ", you crushed the " + oLabel + ". Party loyalty on display.", icon: "💪"};
-      return {msg: "Good work taking out the opposition!", sub: "As a " + pLabel + ", you opposed the " + oLabel + ". Keep fighting.", icon: "🎯"};
-    }
-    if(otherMax > 0 && selfVal > otherMax * 2 && total >= 5){
-      var pLabel = 'politicians';
-      if(playerParty === 'republican') pLabel = 'GOP';
-      else if(playerParty === 'democrat') pLabel = 'Democrats';
-      else pLabel = 'Independents';
-      return {msg: "Whacking your own team?", sub: "You whacked more " + pLabel + " than anyone else. Party loyalty? Not so much.", icon: "🤔"};
-    }
-  }
-  
 if(whackedAllEqual && total >= 9){
     return {msg: "Good luck at the ballot box — your vote doesn't count!", sub: "Perfectly balanced, as all things should be. You stand for nothing, you fall for everything.", icon: '⚖️'};
   }
@@ -934,6 +909,16 @@ if(whackedAllEqual && total >= 9){
     
     if(playerParty !== 'none' && selfWhacks === 0 && total > 3){
       return {msg: "You abandoned your party entirely!", sub: `Zero ${playerParty} whacks. The party chair is disappointed.`, icon: '🏃'};
+    }
+    
+    // ===== Opposition check =====
+    if(playerParty !== 'none' && total >= 5){
+      var pn = {republican:'Republican', democrat:'Democrat', independent:'Independent'}[playerParty];
+      var on = {republican:'Democrats', democrat:'Republicans', independent:'the establishment'}[playerParty];
+      var opp = total - (scores[playerParty] || 0);
+      if(opp > (scores[playerParty] || 0) && opp >= total * 0.6){
+        return {msg: "Good job! You whacked the opposition!", sub: "As a " + pn + ", you took out " + opp + " " + on + ". That is loyalty.", icon: "\uD83C\uDFAF"};
+      }
     }
     
     if(playerParty !== 'none' && selfWhacks >= maxPossible){
@@ -984,15 +969,12 @@ function showEndScreen(){
   const s = state.scores;
   const total = state.totalWhacks || 1; // prevent div by zero
 
-  // Inverted bars: whacking a party means you oppose them
-  // Whacking Dems = Republican, whacking GOP = Democrat
-  const invTotal = s.democrat + s.republican + s.independent || 1;
-  const rPct = Math.round((s.democrat / invTotal) * 100);
-  const dPct = Math.round((s.republican / invTotal) * 100);
-  const iPct = Math.round((s.independent / invTotal) * 100);
+  const rPct = Math.round((s.republican / total) * 100);
+  const dPct = Math.round((s.democrat / total) * 100);
+  const iPct = Math.round((s.independent / total) * 100);
 
   // Get roast based on whacks vs stated party
-  const roast = getRoastMessage({republican:s.democrat, democrat:s.republican, independent:s.independent}, playerParty);
+  const roast = getRoastMessage(s, playerParty);
 
   // Determine alignment label
   let label, alignParty;
@@ -1019,19 +1001,19 @@ function showEndScreen(){
     const partyNames = {republican:'GOP', democrat:'DEM', independent:'IND', none:'None'};
   const partyQ = playerParty ? partyNames[playerParty] || 'None' : 'Skipped';
   const detail = `🔴 GOP: ${rPct}%  •  🔵 DEM: ${dPct}%  •  🟣 IND: ${iPct}%`;
-  breakdownDetail.innerHTML = `<span style="font-size:0.8rem">${detail}</span>`;
+  breakdownDetail.textContent = `Whacks: ${total} | You said: ${partyQ} | ${detail}`;
 
   // Alignment bars
   alignmentBars.innerHTML = `
     <div class="alignment-bar red">
       <span class="label">GOP</span>
       <div class="track"><div class="fill" style="width:${rPct}%"></div></div>
-      <span class="count">${s.democrat}</span>
+      <span class="count">${s.republican}</span>
     </div>
     <div class="alignment-bar blue">
       <span class="label">DEM</span>
       <div class="track"><div class="fill" style="width:${dPct}%"></div></div>
-      <span class="count">${s.republican}</span>
+      <span class="count">${s.democrat}</span>
     </div>
     <div class="alignment-bar purple">
       <span class="label">IND</span>
