@@ -881,8 +881,8 @@ function getRoastMessage(scores, playerParty){
   }
   
   // Player skipped party selection
-  if(maxPct >= 80) return {msg: "You whacked " + maxPct + "% " + partyLabel[maxParty] + "!", sub: "Someone has a strong opinion. Maybe pick a party next time?", icon: "💡"};
-  return {msg: "You whacked everyone!", sub: partyLabel.republican + " " + rPct + "% \u2022 " + partyLabel.democrat + " " + dPct + "% \u2022 " + partyLabel.independent + " " + iPct + "%", icon: "📊"};
+  if(maxPct >= 80) return {msg: "You whacked " + maxPct + "% " + partyLabel[maxParty] + "!", sub: "You really hate those " + partyName[maxParty] + "s!", icon: "🔥"};
+  return {msg: "You whacked everyone!", sub: "Someone really went after the " + partyName[maxParty] + "s.", icon: "📊"}
 }
 
 function endGame(){
@@ -976,22 +976,22 @@ function showEndScreen(){
       alignParty = null;
     }
   } else {
-    // No party selected - show raw data
-    if(rPct > dPct && rPct > iPct){
-      label = `You whacked ${rPct}% Republicans!`;
+    // No party selected - use hate rule too
+    if(rAlign > dAlign && rAlign > iAlign){
+      label = "You're " + rAlign + "% Republican!";
       alignParty = 'Republican';
-    } else if(dPct > rPct && dPct > iPct){
-      label = `You whacked ${dPct}% Democrats!`;
+    } else if(dAlign > rAlign && dAlign > iAlign){
+      label = "You're " + dAlign + "% Democrat!";
       alignParty = 'Democrat';
-    } else if(iPct > rPct && iPct > dPct){
-      label = `You whacked ${iPct}% Independents!`;
+    } else if(iAlign > rAlign && iAlign > dAlign){
+      label = "You're " + iAlign + "% Independent!";
       alignParty = 'Independent';
     } else {
-      label = "You whacked everyone equally!";
+      label = "You're Bipartisan!";
       alignParty = 'Bipartisan';
     }
   }
-alignmentLabel.textContent = label;
+alignmentLabel.textContent = label;alignmentLabel.textContent = label;
   document.getElementById('roastSub').innerHTML = roast.sub;
   document.getElementById('roastIcon').textContent = roast.icon;
 
