@@ -974,9 +974,9 @@ function showEndScreen(){
   const total = state.totalWhacks || 1;
 
   // ALIGNMENT: opposing X = being against X = alignment opposite
-  const aR = s.democrat;    // Dems opposed = Republican alignment
-  const aD = s.republican;  // GOP opposed = Democrat alignment
-  const aI = s.independent; // IND opposed stays IND
+  const aR = s.republican;
+  const aD = s.democrat;
+  const aI = s.independent;
   const aTotal = aR + aD + aI || 1;
 
   const rPct = Math.round((aR / aTotal) * 100);
