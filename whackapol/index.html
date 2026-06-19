@@ -992,6 +992,43 @@ function showEndScreen(){
 
   // Get roast (uses RAW scores for friendly fire detection)
   const roast = getRoastMessage(s, playerParty);
+  const totalWhacks = state.totalWhacks || 0;
+
+  // Zero-whack special case
+  if(totalWhacks === 0){
+    alignmentLabel.textContent = "You didn't whack anyone!";
+    document.getElementById('roastSub').innerHTML = roast.sub;
+    document.getElementById('roastIcon').textContent = roast.icon;
+    const partyNames = {republican:'GOP', democrat:'DEM', independent:'IND', none:'None'};
+    const partyQ = playerParty ? partyNames[playerParty] || 'None' : 'Skipped';
+    breakdownDetail.innerHTML = "Whacks: 0 | You identified as: " + partyQ;
+    alignmentBars.innerHTML = `
+      <div class="alignment-bar red">
+        <span class="label">GOP</span>
+        <div class="track"><div class="fill" style="width:0%">0</div></div>
+        <span class="pct">0%</span>
+      </div>
+      <div class="alignment-bar blue">
+        <span class="label">DEM</span>
+        <div class="track"><div class="fill" style="width:0%">0</div></div>
+        <span class="pct">0%</span>
+      </div>
+      <div class="alignment-bar purple">
+        <span class="label">IND</span>
+        <div class="track"><div class="fill" style="width:0%">0</div></div>
+        <span class="pct">0%</span>
+      </div>
+    `;
+    requestAnimationFrame(() => {
+      const fills = alignmentBars.querySelectorAll('.fill');
+      fills.forEach(f => {
+        const w = f.style.width;
+        f.style.width = '0%';
+        requestAnimationFrame(() => { f.style.width = w; });
+      });
+    });
+    return;
+  }
 
     // Determine proclamation: did they whack the opposition or their own party?
   let label, alignParty;
