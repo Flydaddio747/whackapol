@@ -209,17 +209,6 @@ body{
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
 .breakdown-detail{font-size:0.8rem;color:#9999cc;margin-bottom:12px;line-height:1.5}
-.share-text{
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.06);
-  border-radius:10px;padding:8px 12px;
-  font-size:0.75rem;color:#aaaadd;margin:10px 0;
-  word-break:break-all;
-  cursor:pointer;
-  transition:background 0.2s;
-}
-.share-text:hover{background:rgba(255,255,255,0.08)}
-.share-text.copied{background:rgba(68,255,136,0.1);border-color:rgba(68,255,136,0.2)}
 .end-buttons{
   display:flex;gap:10px;justify-content:center;margin-top:8px;
 }
@@ -353,14 +342,13 @@ body{
 <div id="endScreen" class="screen">
   <div class="result-card">
     <h2>🎯 GAME OVER</h2>
-    <div class="sub">Your Political Alignment</div>
+    <div class="sub">Your ACTUAL Political Alignment</div>
     <div style="font-size:3rem;margin-bottom:4px;" id="roastIcon">🗳️</div>
     <div class="aligntext" id="alignmentLabel">You're 100% Independent</div>
     <div style="font-size:0.85rem;color:#ccccee;margin-bottom:8px;line-height:1.4;padding:0 10px;" id="roastSub"></div>
     <div class="breakdown-detail" id="breakdownDetail"></div>
     <div id="alignmentBars"></div>
-    <div class="share-text" id="shareText">Tap to copy result</div>
-  </div>
+    </div>
   <div class="end-buttons">
     <button class="play-again-btn" id="playAgainBtn">▶&nbsp; PLAY AGAIN</button>
     <button id="viewLbBtn" style="margin-top:8px;padding:8px 24px;border-radius:30px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#8888bb;font-size:0.85rem;cursor:pointer;touch-action:manipulation">🏆 Leaderboard</button>
@@ -443,7 +431,6 @@ const playAgainBtn  = $('playAgainBtn');
 const alignmentLabel= $('alignmentLabel');
 const breakdownDetail=$('breakdownDetail');
 const alignmentBars = $('alignmentBars');
-const shareText     = $('shareText');
 
 // ===== GAME STATE =====
 let state = {
@@ -832,117 +819,70 @@ function startGame(){
 
 // ===== ROAST MESSAGES =====
 function getRoastMessage(scores, playerParty){
-  const total = scores.republican + scores.democrat + scores.independent || 1;
+  const total = scores.republican + scores.democrat + scores.independent;
+  if(total === 0) return {msg: "Too scared to whack?", sub: "Next time show some courage!", icon: "🐔"};
   
-  // Whacked the opposition = proving loyalty
-  if(playerParty && playerParty !== 'none' && total >= 3){
-    var myVal = scores[playerParty] || 0;
-    var oppVal = total - myVal;
-    if(oppVal > myVal){
-      var pName = {republican:'Republican', democrat:'Democrat', independent:'Independent'}[playerParty];
-      var oName = {republican:'Democrats', democrat:'Republicans', independent:'the establishment'}[playerParty];
-      if(oppVal >= total * 0.7){
-        return {msg: "Now THAT is loyalty!", sub: "As a " + pName + ", you opposed the " + oName + " " + Math.round(oppVal/total*100) + "% of the time.", icon: "\uD83C\uDFAF"};
-      }
-      return {msg: "Good work opposing the " + oName + "!", sub: "You opposed the " + oName + " more than your own party. That's the job.", icon: "\uD83C\uDFAF"};
-    }
-  }
-  var rPct = Math.round((scores.republican / total) * 100);
-  var dPct = Math.round((scores.democrat / total) * 100);
-  var iPct = Math.round((scores.independent / total) * 100);
-  // Fix rounding so percentages always sum to 100
-  var pctSum = rPct + dPct + iPct;
-  if(pctSum !== 100 && total > 0){
-    var pctsArr = [[rPct,'r'],[dPct,'d'],[iPct,'i']];
-    pctsArr.sort(function(a,b){ return b[0] - a[0]; });
-    var diff = 100 - pctSum;
-    if(pctsArr[0][1] === 'r') rPct += diff;
-    else if(pctsArr[0][1] === 'd') dPct += diff;
-    else iPct += diff;
-  }
+  const rCnt = scores.republican, dCnt = scores.democrat, iCnt = scores.independent;
+  const rPct = Math.round((rCnt / total) * 100);
+  const dPct = Math.round((dCnt / total) * 100);
+  const iPct = total > 0 ? 100 - rPct - dPct : 0;
   
-  // Find dominate party
-  let maxParty = 'republican';
-  let maxPct = rPct;
+  let maxParty = 'republican', maxPct = rPct;
   if(dPct > maxPct){ maxParty = 'democrat'; maxPct = dPct; }
   if(iPct > maxPct){ maxParty = 'independent'; maxPct = iPct; }
   
-  // Check for ties
-  const parties = ['republican','democrat','independent'];
-  const pcts = [rPct, dPct, iPct];
-  const sorted = [...pcts].sort((a,b) => b-a);
-  const isTie = sorted[0] === sorted[1] && sorted[0] > 0;
-  const whackedAll = scores.republican > 0 && scores.democrat > 0 && scores.independent > 0 && total >= 9;
-  const whackedAllEqual = isTie && whackedAll;
+  const partyLabel = {republican:'GOP', democrat:'DEM', independent:'IND'};
+  const partyName = {republican:'Republican', democrat:'Democrat', independent:'Independent'};
+  const oppName = {republican:'Democrats', democrat:'Republicans', independent:'everyone'};
   
-
-if(whackedAllEqual && total >= 9){
-    return {msg: "Good luck at the ballot box — your vote doesn't count!", sub: "Perfectly balanced, as all things should be. You stand for nothing, you fall for everything.", icon: '⚖️'};
-  }
-  if(isTie && total >= 6){
-    return {msg: "A pox on both their houses!", sub: "You're whacking both sides equally. That's a statement right there.", icon: '🧱'};
-  }
-  
-  // ===== Match with player's stated party =====
+  // Player declared a party
   if(playerParty && playerParty !== 'none'){
-    const selfPct = pcts[parties.indexOf(playerParty)];
-    const otherMax = Math.max(...pcts.filter((_,i) => parties[i] !== playerParty));
+    const pName = partyName[playerParty];
+    const oName = oppName[playerParty];
+    const selfCnt = scores[playerParty] || 0;
+    const oppCnt = total - selfCnt;
     
-    if(selfPct >= 80 && playerParty === maxParty && selfPct > otherMax * 2){
-      if(playerParty === 'republican' && scores.republican > scores.democrat){
-        return {msg: "Whacking the GOP is your love language!", sub: "You only whacked Republicans. Real opposition, right to the GQP.", icon: '🤝'};
-      }
-      if(playerParty === 'democrat' && scores.democrat > scores.republican){
-        return {msg: "Whacking the GOP is your love language!", sub: "You only whacked Democrats. Why stop now", icon: '🤝'};
-      }
-      if(playerParty === 'independent' && scores.independent > 0){
-        return {msg: "Truly, you march to the beat of your own drum!", sub: "An independent who actually whacked independents. We salute you, maverick.", icon: '🪇'};
-      }
+    // Independent special handling
+    if(playerParty === 'independent'){
+      if(rCnt > dCnt && rCnt > iCnt) return {msg: "You're not so Independent!", sub: "You whacked more Republicans than anyone else. Bias detected!", icon: "👀"};
+      if(dCnt > rCnt && dCnt > iCnt) return {msg: "You're not so Independent!", sub: "You whacked more Democrats than anyone else. Lean much?", icon: "👀"};
+      if(iCnt > 0) return {msg: "A true Independent!", sub: "You found both of us! Respect.", icon: "🦏"};
+      return {msg: "You whacked everyone equally!", sub: "Truly bipartisan chaos.", icon: "🤝"};
     }
     
-    // Whacked mostly the other party
-    if(otherMax >= 70 && selfPct <= 20 && playerParty !== 'none'){
-      if(playerParty === 'republican' && maxParty === 'democrat'){
-        return {msg: "Whacked mostly Dems but said you were GOP? Hmm", sub: `Said you were Republican, whacked ${dPct}% Democrats. The primary challenge is real.`, icon: '👀'};
-      }
-      if(playerParty === 'democrat' && maxParty === 'republican'){
-        return {msg: "Whacked mostly GOP but said you were DEM? Oh dear", sub: `Said you were Democrat, whacked ${rPct}% Republicans. The working groups are concerned.`, icon: '📋'};
-      }
-      if(maxParty === 'republican'){
-        return {msg: "Have you considered switching teams?", sub: `You said ${playerParty} but your whacks say GOP. We don't make the rules.`, icon: '🔄'};
-      }
-      if(maxParty === 'democrat'){
-        return {msg: "Your whacks are blue, even if your voter registration isn't!", sub: `Actions speak louder than party registration. ${dPct}% Democrat whacks.`, icon: '💙'};
-      }
+    // Self-whacks = 0 (perfect opposition)
+    if(selfCnt === 0){
+      if(iCnt === 0) return {msg: "You're 100% " + pName + "!", sub: "Every single whack was on the opposition. Outstanding! Keen eye!", icon: "🎯"};
+      return {msg: "You're a loyal " + pName + "!", sub: "Great job on the opposition! But why whack Independents? We need them on our side!", icon: "🎯"};
     }
     
-    // Did they whack their own party's representatives?
-    const partyPols = {republican:10, democrat:10, independent:2};
-    const selfWhacks = scores[playerParty] || 0;
-    const maxPossible = partyPols[playerParty] || 10;
+    // They whacked their own party - give hell!
+    const selfPct = Math.round((selfCnt / total) * 100);
+    let msg, sub, icon;
     
-    if(playerParty !== 'none' && selfWhacks === 0 && total > 3){
-      return {msg: "You abandoned your party entirely!", sub: `Zero ${playerParty} whacks. The party chair is disappointed.`, icon: '🏃'};
+    if(selfPct >= 80){
+      msg = selfCnt + " whacks on your own party?! You're a TRAITOR, " + pName + "!";
+      sub = selfPct + "% friendly fire. The party chair wants a word.";
+      icon = "😡";
+    } else if(selfPct >= 50){
+      msg = selfCnt + " of " + total + " whacks were YOUR OWN side?!";
+      sub = "Half your whacks were friendly fire. Get it together, " + pName + "!";
+      icon = "😵";
+    } else if(selfPct >= 25){
+      msg = selfCnt + " friendly fire whacks. Embarrassing, " + pName + ".";
+      sub = "You need to work on your aim. The opposition is right there!";
+      icon = "😒";
+    } else {
+      msg = selfCnt + " accidental whacks of your own party. Tsk tsk.";
+      sub = "It happens. Just don\'t let it happen again, " + pName + ".";
+      icon = "😐";
     }
-    
-    if(playerParty !== 'none' && selfWhacks >= maxPossible){
-      return {msg: "Did you even see anyone else?", sub: `You whacked all ${maxPossible} ${playerParty}s. Maybe look around next time.`, icon: '👁️'};
-    }
+    return {msg: msg, sub: sub, icon: icon};
   }
   
-  // ===== Generic results =====
-  if(maxParty === 'republican' && rPct > 80){
-    return {msg: "You hate the GOP machine!", sub: `${rPct}% Republican whacks. Your <span style="color:#ff6666">red</span> blood runs deep.`, icon: '🔴'};
-  }
-  if(maxParty === 'democrat' && dPct > 80){
-    return {msg: "You hate the Democrat machine!", sub: `${dPct}% Democrat whacks. <span style="color:#66bbff">Blue</span> is clearly your color.`, icon: '🔵'};
-  }
-  if(maxParty === 'independent' && iPct > 50 && total <= 4){
-    return {msg: "Rare breed spotted!", sub: "An independent who actually found the independents. That's commitment.", icon: '🦄'};
-  }
-  
-  // ===== Fallback =====
-  return {msg: "You participated! That's what counts.", sub: `GOP ${rPct}% • DEM ${dPct}% • IND ${iPct}% — democracy in action.`, icon: '🗳️'};
+  // Player skipped party selection
+  if(maxPct >= 80) return {msg: "You whacked " + maxPct + "% " + partyLabel[maxParty] + "!", sub: "Someone has a strong opinion. Maybe pick a party next time?", icon: "💡"};
+  return {msg: "You whacked everyone!", sub: partyLabel.republican + " " + rPct + "% \u2022 " + partyLabel.democrat + " " + dPct + "% \u2022 " + partyLabel.independent + " " + iPct + "%", icon: "📊"};
 }
 
 function endGame(){
@@ -1010,7 +950,7 @@ function showEndScreen(){
   // Breakdown detail
     const partyNames = {republican:'GOP', democrat:'DEM', independent:'IND', none:'None'};
   const partyQ = playerParty ? partyNames[playerParty] || 'None' : 'Skipped';
-  breakdownDetail.innerHTML = `Whacks: ${total} | Your party: ${partyQ}`;
+  breakdownDetail.innerHTML = `Whacks: ${total} | Your REAL party: ${partyQ}`;
 
   // Alignment bars
   alignmentBars.innerHTML = `
@@ -1030,11 +970,6 @@ function showEndScreen(){
       <span class="pct">${iPct}%</span>
     </div>
   `;
-
-  // Share text
-  const shareStr = `🎯 Whack-a-Pol Results!\n${label}\n${total} whacks | GOP ${rPct}% • DEM ${dPct}% • IND ${iPct}%\nShow your loyalty at: ${window.location.href}`;
-  shareText.textContent = '📋 ' + shareStr;
-  shareText.className = 'share-text';
 
   // Trigger bar animations after render
   requestAnimationFrame(() => {
@@ -1079,35 +1014,6 @@ document.querySelectorAll('.quiz-btn').forEach(btn => {
     // Prevent scroll
   }, {passive:true});
 });
-
-// ===== SHARE TEXT =====
-shareText.addEventListener('click', function(){
-  const text = this.textContent.replace('📋 ','');
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(() => {
-      this.textContent = '✅ Copied!';
-      this.classList.add('copied');
-      setTimeout(() => {
-        this.textContent = text;
-        this.classList.remove('copied');
-      }, 2000);
-    }).catch(() => {
-      fallbackCopy(text);
-    });
-  } else {
-    fallbackCopy(text);
-  }
-});
-
-function fallbackCopy(text){
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed'; ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand('copy'); } catch(e) {}
-  document.body.removeChild(ta);
-}
 
 // ===== EVENT BINDINGS =====
 startBtn.addEventListener('click', startGame);
