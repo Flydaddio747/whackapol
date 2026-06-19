@@ -482,9 +482,11 @@ function layoutHoles(){
     // Click handler
     hole.addEventListener('click', e => onHoleClick(i, e));
     hole.addEventListener('touchstart', e => {
-      // Prevent double-fire on mobile
-      if(!e.target.closest('.hole')) return;
-    }, {passive:true});
+      // Whack immediately on touch (no 300ms click delay on iOS)
+      holes[i].dataset.touchWhacked = Date.now();
+      e.preventDefault();
+      onHoleClick(i, e);
+    }, {passive: false});
     field.appendChild(hole);
     holes.push({el:hole, politician:pol, flash, idx:i});
   }
@@ -586,9 +588,18 @@ function dismissPolitician(holeIdx, wasWhacked){
 
 // ===== CLICK / TAP HANDLING =====
 function onHoleClick(holeIdx, event){
+  // Prevent double-fire: if this hole was just touch-whacked, skip click
+  const hole = holes[holeIdx];
+  if(hole && hole.dataset.touchWhacked){
+    const now = Date.now();
+    if(now - parseInt(hole.dataset.touchWhacked) < 500){
+      return; // Already whacked via touch
+    }
+    delete hole.dataset.touchWhacked;
+  }
+
   if(!state.playing) return;
 
-  const hole = holes[holeIdx];
   const polEl = hole.politician;
   const polIdx = parseInt(polEl.dataset.polIndex);
 
