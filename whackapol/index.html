@@ -941,27 +941,44 @@ function showEndScreen(){
     const oppCnt = total - selfCnt;
     
     if(oppCnt > selfCnt){
-      // Whacked mostly opposition = celebrate with inverted alignment
-      const alignR = s.democrat;    // Dems whacked = Republican alignment
-      const alignD = s.republican;  // GOP whacked = Democrat alignment
-      const alignI = s.independent;
-      const alignTotal = alignR + alignD + alignI || 1;
-      const rAlign = Math.round((alignR / alignTotal) * 100);
-      const dAlign = Math.round((alignD / alignTotal) * 100);
-      const iAlign = Math.round((alignI / alignTotal) * 100);
-      
-      if(rAlign > dAlign && rAlign > iAlign){
-        label = `You're ${rAlign}% Republican!`;
-        alignParty = 'Republican';
-      } else if(dAlign > rAlign && dAlign > iAlign){
-        label = `You're ${dAlign}% Democrat!`;
-        alignParty = 'Democrat';
-      } else if(iAlign > rAlign && iAlign > dAlign){
-        label = `You're ${iAlign}% Independent!`;
-        alignParty = 'Independent';
+      if(playerParty === 'independent'){
+        // Indie: show which party they lean towards (raw counts)
+        const rawPcts = [
+          {p: 'Republican', v: rPct, k: 'Republican'},
+          {p: 'Democrat', v: dPct, k: 'Democrat'},
+          {p: 'Independent', v: iPct, k: 'Independent'}
+        ];
+        rawPcts.sort(function(a,b){ return b.v - a.v; });
+        if(rawPcts[0].v > rawPcts[1].v){
+          label = "You lean towards " + rawPcts[0].p + "s!";
+          alignParty = rawPcts[0].k;
+        } else {
+          label = "A true Independent!";
+          alignParty = 'Independent';
+        }
       } else {
-        label = "You're Bipartisan!";
-        alignParty = 'Bipartisan';
+        // R or D: whacked opposition = proves YOUR party loyalty
+        const alignR = s.democrat;
+        const alignD = s.republican;
+        const alignI = s.independent;
+        const alignTotal = alignR + alignD + alignI || 1;
+        const rAlign = Math.round((alignR / alignTotal) * 100);
+        const dAlign = Math.round((alignD / alignTotal) * 100);
+        const iAlign = Math.round((alignI / alignTotal) * 100);
+        
+        if(rAlign > dAlign && rAlign > iAlign){
+          label = "You're " + rAlign + "% Republican!";
+          alignParty = 'Republican';
+        } else if(dAlign > rAlign && dAlign > iAlign){
+          label = "You're " + dAlign + "% Democrat!";
+          alignParty = 'Democrat';
+        } else if(iAlign > rAlign && iAlign > dAlign){
+          label = "You're " + iAlign + "% Independent!";
+          alignParty = 'Independent';
+        } else {
+          label = "You're Bipartisan!";
+          alignParty = 'Bipartisan';
+        }
       }
     } else {
       // Whacked mostly own party = friendly fire roast
