@@ -872,7 +872,7 @@ function getRoastMessage(scores, playerParty){
         {msg: selfCnt + " whacks on other Independents!", sub: "You hit your own " + iCnt + " times. That's not very maverick of you.", icon: "\uD83D\uDE35"},
       ]);
       // Indie whacked some Indie but mostly opposition
-      if(iCnt > 0 && oppCnt >= selfCnt) return pickOne([
+      if(iCnt > 0 && oppCnt > selfCnt) return pickOne([
         {msg: "A true Independent!", sub: "You found both of us! Respects for hitting all sides.", icon: "\uD83E\uDD8F"},
         {msg: "Balanced chaos!", sub: "You hit R=" + rCnt + " D=" + dCnt + " I=" + iCnt + ". True to the third-party struggle.", icon: "\u2696\uFE0F"},
         {msg: "Principled chaos!", sub: "You whacked all three parties. That's the Independent spirit!", icon: "\uD83C\uDF1F"},
