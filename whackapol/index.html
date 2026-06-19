@@ -818,98 +818,152 @@ function startGame(){
 
 
 // ===== ROAST MESSAGES =====
+
+// EXPANDED ROAST SYSTEM — v2 (50+ variations)
 function getRoastMessage(scores, playerParty){
   const total = scores.republican + scores.democrat + scores.independent;
-  if(total === 0) return {msg: "Too scared to whack?", sub: "Next time show some courage!", icon: "🐔"};
-  
+  if(total === 0) return pickOne([
+    {msg: "Too scared to whack?", sub: "Next time show some courage!", icon: "\uD83D\uDC14"},
+    {msg: "Did you blink?", sub: "The politicians got away unscathed!", icon: "\uD83D\uDE33"},
+    {msg: "Zero whacks?", sub: "The game is 35 seconds. You had one job!", icon: "\uD83D\uDE2C"},
+    {msg: "Not a single whack!", sub: "The closest you got was breathing on your screen.", icon: "\uD83D\uDC4A"}
+  ]);
+
   const rCnt = scores.republican, dCnt = scores.democrat, iCnt = scores.independent;
   const rPct = Math.round((rCnt / total) * 100);
   const dPct = Math.round((dCnt / total) * 100);
   const iPct = total > 0 ? 100 - rPct - dPct : 0;
-  
+
   let maxParty = 'republican', maxPct = rPct;
   if(dPct > maxPct){ maxParty = 'democrat'; maxPct = dPct; }
   if(iPct > maxPct){ maxParty = 'independent'; maxPct = iPct; }
-  
+
   const partyLabel = {republican:'GOP', democrat:'DEM', independent:'IND'};
   const partyName = {republican:'Republican', democrat:'Democrat', independent:'Independent'};
   const oppName = {republican:'Democrats', democrat:'Republicans', independent:'everyone'};
-  
-  // Player declared a party
+
+  // === DECLARED PARTY PATH ===
   if(playerParty && playerParty !== 'none'){
     const pName = partyName[playerParty];
     const oName = oppName[playerParty];
     const selfCnt = scores[playerParty] || 0;
     const oppCnt = total - selfCnt;
-    
-    // Independent special handling
+
+    // === INDEPENDENT SPECIAL PATH ===
     if(playerParty === 'independent'){
-      if(rCnt > dCnt && rCnt > iCnt) return {msg: "You're not so Independent!", sub: "You whacked more Republicans than anyone else. Bias detected!", icon: "👀"};
-      if(dCnt > rCnt && dCnt > iCnt) return {msg: "You're not so Independent!", sub: "You whacked more Democrats than anyone else. Lean much?", icon: "👀"};
-      if(iCnt > 0) return {msg: "A true Independent!", sub: "You found both of us! Respect.", icon: "🦏"};
-      return {msg: "You whacked everyone equally!", sub: "Truly bipartisan chaos.", icon: "🤝"};
+      // Indie whacked mostly Republicans
+      if(rCnt > dCnt && rCnt > iCnt) return pickOne([
+        {msg: "You're not so Independent!", sub: "You whacked " + rCnt + " Republicans. That's a GOP bias, admit it!", icon: "\uD83D\uDC40"},
+        {msg: "Not very Independent...", sub: rCnt + " Republicans whacked to " + dCnt + " Democrats. We see you.", icon: "\uD83E\uDD28"},
+        {msg: "Fake Independent!", sub: "You hammered Republicans " + rPct + "% of the time. Pick a side!", icon: "\uD83C\uDFAF"},
+        {msg: "Leaning right?", sub: rCnt + " GOP whacks vs " + dCnt + " DEM. Your mask is slipping.", icon: "\uD83D\uDC40"},
+      ]);
+      // Indie whacked mostly Democrats
+      if(dCnt > rCnt && dCnt > iCnt) return pickOne([
+        {msg: "You're not so Independent!", sub: "You whacked " + dCnt + " Democrats. Lean much?", icon: "\uD83D\uDC40"},
+        {msg: "Not very Independent...", sub: dCnt + " Democrats whacked to " + rCnt + " Republicans. Hmm.", icon: "\uD83E\uDD28"},
+        {msg: "Fake Independent!", sub: "You hammered Democrats " + dPct + "% of the time. Come out of the closet!", icon: "\uD83C\uDFAF"},
+        {msg: "Leaning left?", sub: dCnt + " DEM whacks vs " + rCnt + " GOP. We know what you are.", icon: "\uD83D\uDC40"},
+      ]);
+      // Indie whacked mostly Indie (friendly fire!)
+      if(iCnt > oppCnt && iCnt > 0) return pickOne([
+        {msg: selfCnt + " whacks on your own fellow Independents?!", sub: "You're supposed to be the sensible ones! " + iCnt + " friendly fire hits!", icon: "\uD83D\uDE21"},
+        {msg: "Friendly fire, Independent!", sub: iCnt + " whacks on your own tribe. The Rhino Party disowns you.", icon: "\uD83E\uDD8F"},
+        {msg: selfCnt + " whacks on other Independents!", sub: "You hit your own " + iCnt + " times. That's not very maverick of you.", icon: "\uD83D\uDE35"},
+      ]);
+      // Indie whacked some Indie but mostly opposition
+      if(iCnt > 0 && oppCnt >= selfCnt) return pickOne([
+        {msg: "A true Independent!", sub: "You found both of us! Respects for hitting all sides.", icon: "\uD83E\uDD8F"},
+        {msg: "Balanced chaos!", sub: "You hit R=" + rCnt + " D=" + dCnt + " I=" + iCnt + ". True to the third-party struggle.", icon: "\u2696\uFE0F"},
+        {msg: "Principled chaos!", sub: "You whacked all three parties. That's the Independent spirit!", icon: "\uD83C\uDF1F"},
+      ]);
+      // Equal split
+      return pickOne([
+        {msg: "You whacked everyone equally!", sub: "Truly bipartisan chaos.", icon: "\uD83E\uDD1D"},
+        {msg: "Maximum chaos!", sub: "You spread the pain evenly. Independence done right.", icon: "\uD83C\uDF1F"},
+      ]);
     }
-    
-        // Check: mostly opposition or mostly own party?
+
+    // === REGULAR PARTY PATH (R/D) ===
     const selfPct = Math.round((selfCnt / total) * 100);
 
+    // Check: mostly opposition or mostly own party?
     if(oppCnt > selfCnt){
-      // Mostly opposition - praise then gentle aim note
+      // Mostly opposition! Celebrate!
       if(selfCnt === 0){
-        if(iCnt === 0) return {msg: "You're 100% " + pName + "!", sub: "Every single whack was on the opposition. Outstanding! Keen eye!", icon: "🎯"};
-        return {msg: "Great job, " + pName + "!", sub: "Excellent work on the opposition! But why hit Independents? Leave them alone!", icon: "🎯"};
+        // Perfect - no friendly fire at all
+        if(iCnt === 0) return pickOne([
+          {msg: "You\'re 100% " + pName + "!", sub: "Every single whack was on the opposition. Textbook execution!", icon: "\uD83C\uDFAF"},
+          {msg: "Flawless victory!", sub: "Zero friendly fire. Your party would be proud, " + pName + "!", icon: "\uD83C\uDFC6"},
+          {msg: "No mistakes!", sub: "100% opposition whacks. That\'s how you prove loyalty!", icon: "\uD83D\uDE0E"},
+        ]);
+        return pickOne([
+          {msg: "Great job, " + pName + "!", sub: "Excellent work on the opposition! But why hit Independents? They\'re just there!", icon: "\uD83C\uDFAF"},
+          {msg: "Solid effort!", sub: "You crushed the opposition. The Independents caught strays though.", icon: "\uD83D\uDCA5"},
+          {msg: "Almost perfect!", sub: "Great opposition work! Maybe leave the poor Independents alone next time?", icon: "\uD83D\uDE09"},
+        ]);
       }
-      return {msg: "Great job, " + pName + "!", sub: "Excellent aim! But you accidentally hit " + selfCnt + " of your own. Be more careful next time, " + pName + ".", icon: "🎯"};
+      // Mostly opposition, some friendly fire
+      return pickOne([
+        {msg: "Great job, " + pName + "!", sub: "Excellent aim! But you accidentally hit " + selfCnt + " of your own. Be more careful!", icon: "\uD83C\uDFAF"},
+        {msg: "Good work, " + pName + "!", sub: selfCnt + " friendly fire whacks though. The party chair is watching.", icon: "\uD83D\uDCCD"},
+        {msg: "Almost there!", sub: "You got most of the opposition! Just " + selfCnt + " oopsie-whacks on your own side.", icon: "\uD83D\uDC4D"},
+        {msg: "Nice aim!", sub: selfCnt + " whacks on your own party. The opposition thanks you for the rest!", icon: "\uD83C\uDFAF"},
+      ]);
     }
 
-    // Whacked mostly own party - give hell!
-    let msg, sub, icon;
-
+    // === FRIENDLY FIRE PATH (mostly own party) ===
     if(selfPct >= 80){
-      msg = selfCnt + " whacks on your own party?! You're a TRAITOR, " + pName + "!";
-      sub = selfPct + "% friendly fire. The party chair wants a word.";
-      icon = "😡";
+      return pickOne([
+        {msg: selfCnt + " whacks on your own party?! You\'re a TRAITOR, " + pName + "!", sub: selfPct + "% friendly fire. The party chair wants a word.", icon: "\uD83D\uDE21"},
+        {msg: selfCnt + " friendly fire hits?!", sub: selfPct + "% of your whacks were on your own " + oName + ". That\'s treason!", icon: "\uD83D\uDE21"},
+        {msg: selfCnt + " of " + total + " on your own side?!", sub: "Your party is holding an emergency meeting about you, " + pName + ".", icon: "\uD83D\uDE35"},
+        {msg: "You\'re fired!", sub: selfCnt + "/" + total + " whacks on your own " + oName + ". HR wants to see you.", icon: "\uD83D\uDE11"},
+      ]);
     } else if(selfPct >= 50){
-      msg = selfCnt + " of " + total + " whacks were YOUR OWN side?!";
-      sub = "Half your whacks were friendly fire. Get it together, " + pName + "!";
-      icon = "😵";
+      return pickOne([
+        {msg: selfCnt + " of " + total + " whacks were YOUR OWN side?!", sub: "Half your whacks were friendly fire. Get it together, " + pName + "!", icon: "\uD83D\uDE35"},
+        {msg: "Friendly fire much?", sub: selfCnt + "/" + total + " on your own party. That\'s not loyalty, that\'s sabotage!", icon: "\uD83D\uDE35"},
+        {msg: selfCnt + " whacks on your own!", sub: "You\'re doing the opposition\'s job for them. Stop, " + pName + "!", icon: "\uD83D\uDE2D"},
+        {msg: "Broken clock syndrome.", sub: selfCnt + "/" + total + " on your own " + oName + ". The opposition is right there!", icon: "\uD83D\uDCF7"},
+      ]);
     } else if(selfPct >= 25){
-      msg = selfCnt + " friendly fire whacks. Embarrassing, " + pName + ".";
-      sub = "You need to work on your aim. The opposition is right there!";
-      icon = "😒";
+      return pickOne([
+        {msg: selfCnt + " friendly fire whacks. Embarrassing, " + pName + ".", sub: "You need to work on your aim. The opposition is RIGHT THERE!", icon: "\uD83D\uDE12"},
+        {msg: selfCnt + " accidental whacks of your own.", sub: "That\'s " + selfPct + "% friendly fire. Not terrible, but still ouch.", icon: "\uD83D\uDC4E"},
+        {msg: selfCnt + " on your own side? Tsk.", sub: "Every whack on your own party is a whack not on the opposition!", icon: "\uD83D\uDE10"},
+        {msg: "Oof, " + selfCnt + " friendly fire.", sub: "You need better aim. The " + oName + " are the enemy, remember?", icon: "\uD83D\uDE0F"},
+      ]);
     } else {
-      msg = selfCnt + " accidental whacks of your own party. Tsk tsk.";
-      sub = "It happens. Just don't let it happen again, " + pName + ".";
-      icon = "😐";
+      return pickOne([
+        {msg: selfCnt + " accidental whacks of your own party. Tsk tsk.", sub: "It happens. Just don\'t let it happen again, " + pName + ".", icon: "\uD83D\uDE10"},
+        {msg: selfCnt + " oopsie-whacks.", sub: "A few stray hits on your own side. The opposition thanks you!", icon: "\uD83D\uDE09"},
+        {msg: "Only " + selfCnt + " friendly fire.", sub: "Not bad! But every whack on your own is a wasted whack, " + pName + ".", icon: "\uD83D\uDC4D"},
+        {msg: selfCnt + " whacks went astray.", sub: "Minimal friendly fire! Your aim is improving, " + pName + ".", icon: "\uD83C\uDFC1"},
+      ]);
     }
-    return {msg: msg, sub: sub, icon: icon};
-  }
-  
-  // Player skipped party selection
-  if(maxPct >= 80) return {msg: "You whacked " + maxPct + "% " + partyLabel[maxParty] + "!", sub: "You really hate those " + partyName[maxParty] + "s!", icon: "🔥"};
-  return {msg: "You whacked everyone!", sub: "Someone really went after the " + partyName[maxParty] + "s.", icon: "📊"}
-}
-
-function endGame(){
-  state.playing = false;
-  clearInterval(state.timerId);
-  clearInterval(state.spawnTimerId);
-
-  // Dismiss all remaining politicians
-  for(let i=0; i<HOLE_COUNT; i++){
-    dismissPolitician(i, false);
   }
 
-  playSound('gameover');
+  // === NO PARTY SELECTED PATH ===
+  if(maxPct >= 80) return pickOne([
+    {msg: "You whacked " + maxPct + "% " + partyLabel[maxParty] + "!", sub: "You really hate those " + partyName[maxParty] + "s!", icon: "\uD83D\uDD25"},
+    {msg: maxPct + "% " + partyLabel[maxParty] + " whacks!", sub: "Someone has strong feelings about the " + partyName[maxParty] + "s.", icon: "\uD83D\uDCA5"},
+    {msg: "Mostly " + partyLabel[maxParty] + "!", sub: maxPct + "% of your whacks were " + partyName[maxParty] + "s. Pick a party yet?", icon: "\uD83D\uDC40"},
+    {msg: "You crushed the " + partyName[maxParty] + "s!", sub: maxPct + "% of your whacks went their way. Your party is obvious.", icon: "\uD83C\uDFAF"},
+  ]);
 
-  // Show party quiz first
-  setTimeout(() => {
-    gameScreen.classList.remove('active');
-  quizScreen.classList.remove('active');
-    quizScreen.classList.add('active');
-  }, 400);
+  return pickOne([
+    {msg: "You whacked everyone!", sub: "Someone really went after the " + partyName[maxParty] + "s.", icon: "\uD83D\uDCCA"},
+    {msg: "Spread the pain!", sub: "No clear favorite. You hate everyone equally.", icon: "\uD83D\uDCAA"},
+    {msg: "Equal opportunity whacker!", sub: "Your whacks were spread across all parties. True chaos.", icon: "\u2696\uFE0F"},
+    {msg: "Scattershot strategy!", sub: "You took a little from every party. Indecisive but effective!", icon: "\uD83C\uDF1F"},
+  ]);
 }
 
+// Pick a random item from an array
+function pickOne(arr){
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 function showEndScreen(){
   gameScreen.classList.remove('active');
   quizScreen.classList.remove('active');
