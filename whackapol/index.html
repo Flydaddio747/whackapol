@@ -1225,7 +1225,16 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
   var submitArea = id('lbSubmit');
   var submitStatus = id('submitStatus');
 
-  var LB_API = 'http://192.168.1.126:3456';
+  var SB_URL = 'https://pdizakwmdtvprrswabzq.supabase.co';
+  var SB_KEY = 'sb_publishable_DZdlfKzPizmHuG9g0JFY-w_KMX9oupf';
+
+  function sbFetch(path, opts){
+    opts = opts || {};
+    opts.headers = opts.headers || {};
+    opts.headers['apikey'] = SB_KEY;
+    opts.headers['Authorization'] = 'Bearer ' + SB_KEY;
+    return fetch(SB_URL + path, opts);
+  }
 
   function submitScore(){
     if(!submitBtn || submitBtn.disabled) return;
@@ -1247,66 +1256,78 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
     submitBtn.textContent = 'Submitting...';
     submitStatus.textContent = '';
 
-    fetch(LB_API + '/api/score', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
+    var body = {
         nickname: nickname,
         party: party,
         whacks: total,
         loyalty: loyalty,
         score: score,
-        email: email
-      })
-    }).then(function(r){ return r.json(); }).then(function(d){
-      if(d.ok){
-        submitStatus.innerHTML = '<span style="color:#66dd88">✓ Rank #' + d.rank + ' of ' + d.total + '</span>';
-        if(submitArea) submitArea.style.display = 'none';
-      } else {
-        submitStatus.textContent = 'Error: ' + (d.error || 'unknown');
+        email: email || undefined
+      };
+      // Remove email field entirely if empty (avoids null in DB)
+      if(!email) delete body.email;
+
+      sbFetch('/rest/v1/leaderboard', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Prefer': 'return=representation'},
+        body: JSON.stringify(body)
+      }).then(function(r){ return r.json(); }).then(function(rows){
+        if(!rows || rows.length === 0) throw new Error('Insert failed');
+        // Get rank by counting scores higher than this one
+        return sbFetch('/rest/v1/leaderboard?score=gt.' + score + '&select=count').then(function(r){ return r.json(); }).then(function(c){
+          var rank = (c[0] && c[0].count) ? parseInt(c[0].count) + 1 : 1;
+          return sbFetch('/rest/v1/leaderboard?select=count').then(function(r2){ return r2.json(); }).then(function(t){
+            var totalCount = (t[0] && t[0].count) ? parseInt(t[0].count) : 0;
+            submitStatus.innerHTML = '<span style="color:#66dd88">✓ Rank #' + rank + ' of ' + totalCount + '</span>';
+            if(submitArea) submitArea.style.display = 'none';
+          });
+        });
+      }).catch(function(e){
+        submitStatus.textContent = 'Could not reach server. Try again later.';
         submitBtn.disabled = false;
         submitBtn.textContent = '⬆ Submit Score';
-      }
-    }).catch(function(e){
-      submitStatus.textContent = 'Could not reach server. Try again later.';
-      submitBtn.disabled = false;
-      submitBtn.textContent = '⬆ Submit Score';
-    });
+      });
   }
 
   function renderLeaderboard(){
     var el = id('lbContent');
     if(!el) return;
     el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">Loading...</div>';
-    fetch(LB_API + '/api/leaderboard')
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        var entries = d.leaderboard || [];
-        if(!entries.length){
-          el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">No leaderboard entries yet. Play a game!</div>';
-          return;
-        }
-        var h = '<div style="display:flex;flex-direction:column;gap:4px">';
-        var medals = ['🥇','🥈','🥉'];
-        for(var i=0; i<Math.min(50, entries.length); i++){
-          var e = entries[i];
-          var rank = i < 3 ? medals[i] : '#'+(i+1);
-          var partyDot = '';
-          if(e.party === 'R') partyDot = '<span style="color:#ff4444">●</span> ';
-          else if(e.party === 'D') partyDot = '<span style="color:#4488ff">●</span> ';
-          else if(e.party === 'I') partyDot = '<span style="color:#bb66ff">●</span> ';
-          h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:rgba(255,255,255,0.03);border-radius:8px">';
-          h += '<span style="font-size:0.85rem">'+rank+' '+partyDot+'<span style="color:#ddd">'+e.nickname+'</span> <span style="color:#666688;font-size:0.7rem">'+e.score+'pts</span></span>';
-          h += '<span style="font-size:0.7rem;color:#666688">'+e.whacks+'wh · '+e.loyalty+'%</span>';
-          h += '</div>';
-        }
-        h += '<div style="text-align:center;font-size:0.65rem;color:#555577;margin-top:8px">'+d.count+' total entries</div>';
+
+    Promise.all([
+      sbFetch('/rest/v1/leaderboard?select=*&order=score.desc&limit=50'),
+      sbFetch('/rest/v1/leaderboard?select=count')
+    ]).then(function(responses){
+      return Promise.all(responses.map(function(r){ return r.json(); }));
+    }).then(function(results){
+      var entries = results[0] || [];
+      var countInfo = results[1] || [];
+      var totalCount = (countInfo[0] && countInfo[0].count) ? parseInt(countInfo[0].count) : 0;
+
+      if(!entries.length){
+        el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">No leaderboard entries yet. Play a game!</div>';
+        return;
+      }
+      var h = '<div style="display:flex;flex-direction:column;gap:4px">';
+      var medals = ['🥇','🥈','🥉'];
+      for(var i=0; i<Math.min(50, entries.length); i++){
+        var e = entries[i];
+        var rank = i < 3 ? medals[i] : '#'+(i+1);
+        var partyDot = '';
+        if(e.party === 'R') partyDot = '<span style="color:#ff4444">●</span> ';
+        else if(e.party === 'D') partyDot = '<span style="color:#4488ff">●</span> ';
+        else if(e.party === 'I') partyDot = '<span style="color:#bb66ff">●</span> ';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:rgba(255,255,255,0.03);border-radius:8px">';
+        h += '<span style="font-size:0.85rem">'+rank+' '+partyDot+'<span style="color:#ddd">'+e.nickname+'</span> <span style="color:#666688;font-size:0.7rem">'+e.score+'pts</span></span>';
+        h += '<span style="font-size:0.7rem;color:#666688">'+e.whacks+'wh · '+e.loyalty+'%</span>';
         h += '</div>';
-        el.innerHTML = h;
-      })
-      .catch(function(){
-        el.innerHTML = '<div style="text-align:center;color:#ff6666;font-size:0.85rem;padding:20px">⚠ Could not load leaderboard</div>';
-      });
+      }
+      h += '<div style="text-align:center;font-size:0.65rem;color:#555577;margin-top:8px">'+totalCount+' total entries</div>';
+      h += '</div>';
+      el.innerHTML = h;
+    }).catch(function(){
+      el.innerHTML = '<div style="text-align:center;color:#ff6666;font-size:0.85rem;padding:20px">⚠ Could not load leaderboard</div>';
+    });
   }
 
   if(viewLbBtn && endScreen && lbScreen){
