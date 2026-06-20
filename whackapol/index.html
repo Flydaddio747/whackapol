@@ -314,6 +314,7 @@ body{
     <div style="font-size:0.65rem;color:#555577;text-align:center;width:100%;margin-top:-2px">Blind whacking — no party clues</div>
   </div>
   <div class="total-score">Total: <span id="totalScore">0</span></div>
+  <div id="hitEffect" style="position:absolute;top:12%;left:50%;transform:translateX(-50%);z-index:50;font-size:1.2rem;font-weight:800;color:#fff;text-shadow:0 0 20px rgba(255,255,255,0.5);pointer-events:none;opacity:0;transition:opacity 0.15s;white-space:nowrap;background:rgba(0,0,0,0.6);padding:4px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.15)"></div>
   <div class="field-container">
     <div class="field" id="field"></div>
   </div>
@@ -609,39 +610,8 @@ function dismissPolitician(holeIdx, wasWhacked){
 
 // ===== CLICK / TAP HANDLING =====
 function onHoleClick(holeIdx, event){
-  // ===== DIAGNOSTIC: ALWAYS SHOW CLICK INFO =====
-  var _dm = document.getElementById('debugMsg');
-  if(_dm){
-    try {
-      var _h = holes && holes[holeIdx] ? 'Y' : ('N:holes=' + (holes ? holes.length : 'null'));
-      var _p = '?';
-      var _c = '?';
-      var _tw = '?';
-      if(holes && holes[holeIdx]){
-        _p = holes[holeIdx].politician ? parseInt(holes[holeIdx].politician.dataset.polIndex) : 'noPol';
-        _c = holes[holeIdx].politician ? holes[holeIdx].politician.className : 'noPol';
-        _tw = holes[holeIdx].dataset ? (holes[holeIdx].dataset.touchWhacked || 'undef') : 'noDs';
-      }
-      _dm.textContent = 'CLICK h=' + holeIdx + ' hole=' + _h + ' polIdx=' + _p + ' cls="' + _c + '" tw=' + _tw + ' ap=' + (state.activeHoles ? state.activeHoles.length : '?');
-      _dm.style.color = '#ff0';
-      _dm.style.display = 'block';
-    } catch(e){ _dm.textContent = 'ERR: ' + e.message; _dm.style.display = 'block'; }
-  }
-  // ===== END DIAGNOSTIC =====
-
-  // Check state.playing
-  if(window._dc){
-    _dc.clicks++;
-    var de=document.getElementById('d_clicks');
-    if(de) de.textContent=_dc.clicks;
-  }
-  var sp = typeof state !== 'undefined' ? state.playing : 'NO STATE';
-  var se = document.getElementById('d_state');
-  if(se) se.textContent = sp === true ? 'running' : (sp === false ? 'ended' : String(sp));
-  
-  const hole = holes[holeIdx];
-  try{var de=document.getElementById("d_clicks");if(de)de.textContent=_dc.clicks}catch(e){}
   // Prevent double-fire: if this hole was just touch-whacked, skip click
+  const hole = holes[holeIdx];
   if(hole && hole.el && hole.el.dataset.touchWhacked){
     const now = Date.now();
     if(now - parseInt(hole.el.dataset.touchWhacked) < 500){
@@ -659,19 +629,6 @@ function onHoleClick(holeIdx, event){
   if(polIdx === -1 || polIdx === undefined || !polEl.classList.contains('active')){
     playSound('miss');
     showTapRipple(event);
-    // Show state info on miss
-    var sdiv = document.getElementById('d_state');
-    if(sdiv) sdiv.textContent = 'miss - playing=' + state.playing + ' holes=' + (state.activeHoles?state.activeHoles.length:0);
-    // On-screen MISS indicator
-    var mdiv = document.getElementById('debugMsg');
-    if(mdiv){
-      var status = polIdx === -1 ? 'polIdx=-1' : polIdx === undefined ? 'polIdx=undef' : '!active';
-      var aHoles = state.activeHoles ? state.activeHoles.length : 0;
-      mdiv.textContent = 'MISS (' + status + ') holes=' + aHoles + ' t=' + state.timeLeft;
-      mdiv.style.color = '#f44';
-      mdiv.style.display = 'block';
-      setTimeout(function(){ mdiv.style.display = 'none'; }, 800);
-    }
     return;
   }
 
@@ -681,13 +638,7 @@ function onHoleClick(holeIdx, event){
 
   // Record whack
   state.scores[polData.party]++;
-  var hdiv = document.getElementById('debugMsg');
-  if(hdiv){
-    hdiv.textContent = 'HIT! ' + polData.name + ' (' + polData.party + ')';
-    hdiv.style.color = '#0f0';
-    hdiv.style.display = 'block';
-    setTimeout(function(){ hdiv.style.display = 'none'; }, 800);
-  }
+  showHitEffect(polData.name);
   state.totalWhacks++;
   updateScoreDisplay();
 
@@ -699,6 +650,17 @@ function onHoleClick(holeIdx, event){
 
   // Dismiss
   dismissPolitician(holeIdx, true);
+}
+
+function showHitEffect(name){
+  // Brief visual confirmation — shows politician name briefly
+  var el = document.getElementById('hitEffect');
+  if(!el) return;
+  el.textContent = '✖ ' + name;
+  el.style.opacity = '1';
+  el.style.display = 'block';
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(function(){ el.style.opacity = '0'; }, 600);
 }
 
 function showWhackFlash(el, party){
@@ -865,7 +827,7 @@ function startGame(){
   state.scores = {republican:0, democrat:0, independent:0};
   state.timeLeft = 35;
   state.totalWhacks = 0;
-  state.playing = true; try{var ds=document.getElementById("d_state");if(ds)ds.textContent="running";var dp=document.getElementById("d_playing");if(dp)dp.textContent="true"}catch(e){}
+  state.playing = true;
 
   // Clear any lingering politicians
   for(let i=0; i<HOLE_COUNT; i++){
@@ -1440,25 +1402,6 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
   }
 })();
 </script>
-<div id="debugMsg" style="position:fixed;top:55%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:24px;font-weight:bold;z-index:99999;padding:20px 40px;border-radius:16px;display:none;text-align:center;pointer-events:none;border:3px solid #0f0"></div>
-<div id="debugPanel" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);color:#0f0;font-family:monospace;font-size:14px;z-index:9999;padding:20px 30px;border-radius:12px;border:2px solid #0f0;display:none;text-align:center;pointer-events:none;line-height:1.8">
-  <div style="font-size:18px;font-weight:bold;margin-bottom:8px">🔍 DIAGNOSTIC</div>
-  <div>State: <span id="d_state">not started</span></div>
-  <div>Playing: <span id="d_playing">false</span></div>
-  <div>Click count: <span id="d_clicks">0</span></div>
-  <div>Whack count: <span id="d_whacks">0</span></div>
-  <div>Active pols: <span id="d_pols">0</span></div>
-  <div>Time: <span id="d_time">-</span></div>
-</div>
-<div id="debugToggle" style="position:fixed;top:5px;right:5px;z-index:99999;padding:4px 8px;background:rgba(0,0,0,0.7);color:#0f0;font-family:monospace;font-size:10px;border-radius:4px;cursor:pointer;border:1px solid #0f0">DBG</div>
-<script>
-var _dc = {clicks:0, whacks:0};
-function showDbg(){ document.getElementById('debugPanel').style.display = 'block'; }
-function hideDbg(){ document.getElementById('debugPanel').style.display = 'none'; }
-document.getElementById('debugToggle').addEventListener('click', function(){
-  var p = document.getElementById('debugPanel');
-  p.style.display = p.style.display === 'block' ? 'none' : 'block';
-});
-</script>
+
 </body>
 </html>
