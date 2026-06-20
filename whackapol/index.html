@@ -345,8 +345,8 @@ body{
 <!-- ===== LEADERBOARD ===== -->
 <div id="leaderboardScreen" class="screen" style="justify-content:flex-start;padding-top:20px;overflow-y:auto">
   <div style="font-size:1.7rem;font-weight:800;margin-bottom:4px">🏆 Leaderboard</div>
-  <div style="font-size:0.75rem;color:#666688;margin-bottom:16px">Top 10 whackers</div>
-  <div id="lbContent" style="width:100%;max-width:360px">
+  <div style="font-size:0.75rem;color:#666688;margin-bottom:16px">All whackers — ranked by score</div>
+  <div id="lbContent" style="width:100%;max-width:400px">
     <div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">Play a game to appear on the leaderboard!</div>
   </div>
   <button onclick="document.getElementById('leaderboardScreen').classList.remove('active');document.getElementById('endScreen').classList.add('active')"
@@ -1346,7 +1346,7 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
     el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">Loading...</div>';
 
     Promise.all([
-      sbFetch('/rest/v1/leaderboard?select=*&order=score.desc&limit=50'),
+      sbFetch('/rest/v1/leaderboard?select=*&order=score.desc&limit=9999'),
       sbFetch('/rest/v1/leaderboard?select=count')
     ]).then(function(responses){
       return Promise.all(responses.map(function(r){ return r.json(); }));
@@ -1360,17 +1360,30 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
         return;
       }
       var h = '<div style="display:flex;flex-direction:column;gap:4px">';
+      // Column headers
+      h += '<div style="display:flex;align-items:center;padding:4px 10px;font-size:0.65rem;color:#555577;border-bottom:1px solid rgba(255,255,255,0.05)">';
+      h += '<span style="width:24px"></span>';
+      h += '<span style="flex:1">Name</span>';
+      h += '<span style="width:60px;text-align:right">Loyalty</span>';
+      h += '<span style="width:55px;text-align:right">Whacks</span>';
+      h += '<span style="width:55px;text-align:right">Score</span>';
+      h += '</div>';
       var medals = ['🥇','🥈','🥉'];
-      for(var i=0; i<Math.min(50, entries.length); i++){
+      for(var i=0; i<entries.length; i++){
         var e = entries[i];
         var rank = i < 3 ? medals[i] : '#'+(i+1);
         var partyDot = '';
-        if(e.party === 'R') partyDot = '<span style="color:#ff4444">●</span> ';
-        else if(e.party === 'D') partyDot = '<span style="color:#4488ff">●</span> ';
-        else if(e.party === 'I') partyDot = '<span style="color:#bb66ff">●</span> ';
-        h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:rgba(255,255,255,0.03);border-radius:8px">';
-        h += '<span style="font-size:0.85rem">'+rank+' '+partyDot+'<span style="color:#ddd">'+e.nickname+'</span> <span style="color:#666688;font-size:0.7rem">'+e.score+'pts</span></span>';
-        h += '<span style="font-size:0.7rem;color:#666688">'+e.whacks+'wh · '+e.loyalty+'%</span>';
+        if(e.party === 'R') partyDot = '<span style="color:#ff4444">●</span>';
+        else if(e.party === 'D') partyDot = '<span style="color:#4488ff">●</span>';
+        else if(e.party === 'I') partyDot = '<span style="color:#bb66ff">●</span>';
+        else partyDot = '<span style="color:#555">●</span>';
+        var bg = i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent';
+        h += '<div style="display:flex;align-items:center;padding:5px 10px;background:'+bg+';border-radius:6px">';
+        h += '<span style="width:24px;font-size:0.8rem">'+rank+'</span>';
+        h += '<span style="flex:1;font-size:0.8rem;color:#ddd">'+partyDot+' '+e.nickname+'</span>';
+        h += '<span style="width:60px;text-align:right;font-size:0.75rem;color:#aabbcc">'+e.loyalty+'%</span>';
+        h += '<span style="width:55px;text-align:right;font-size:0.75rem;color:#aabbcc">'+e.whacks+'</span>';
+        h += '<span style="width:55px;text-align:right;font-size:0.8rem;color:#fff;font-weight:600">'+e.score+'</span>';
         h += '</div>';
       }
       h += '<div style="text-align:center;font-size:0.65rem;color:#555577;margin-top:8px">'+totalCount+' total entries</div>';
