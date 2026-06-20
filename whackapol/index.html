@@ -1,5 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+<script>
+window.onerror = function(msg, url, line, col, err){
+var e = document.getElementById("errDisplay");
+if(!e){
+e = document.createElement("div");
+e.id = "errDisplay";
+e.style.cssText = "position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#a00;color:#fff;padding:12px 20px;border-radius:10px;font-family:monospace;font-size:14px;z-index:999999;max-width:90%;text-align:center;pointer-events:none;border:2px solid #f44";
+document.body.appendChild(e);
+}
+e.textContent = "ERROR: " + msg + " (line " + line + ")";
+e.style.display = "block";
+return true;
+};
+</script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -605,10 +619,9 @@ function onHoleClick(holeIdx, event){
   var se = document.getElementById('d_state');
   if(se) se.textContent = sp === true ? 'running' : (sp === false ? 'ended' : String(sp));
   
-  // Prevent double-fire check  
-  const hole = holes[holeIdx]; try{var de=document.getElementById("d_clicks");if(de)de.textContent=_dc.clicks}catch(e){}
-  // Prevent double-fire: if this hole was just touch-whacked, skip click
   const hole = holes[holeIdx];
+  try{var de=document.getElementById("d_clicks");if(de)de.textContent=_dc.clicks}catch(e){}
+  // Prevent double-fire: if this hole was just touch-whacked, skip click
   if(hole && hole.dataset.touchWhacked){
     const now = Date.now();
     if(now - parseInt(hole.dataset.touchWhacked) < 500){
