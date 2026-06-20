@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Whack-a-Pol Leaderboard Demo</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: linear-gradient(135deg, #0a0a20 0%, #1a1040 50%, #0a0a20 100%);
+  color: #e0e0ff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+.container {
+  width: 100%;
+  max-width: 500px;
+}
+h1 { font-size: 1.7rem; font-weight: 800; text-align: center; margin-bottom: 2px; }
+.sub { text-align: center; color: #8888bb; font-size: 0.8rem; margin-bottom: 12px; }
+.tbl-header {
+  display: flex;
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  color: #666688;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 4px;
+}
+.tbl-header span { flex-shrink: 0; }
+.col-rank { width: 32px; text-align: center; }
+.col-player { flex: 1; }
+.col-party { width: 24px; text-align: center; }
+.col-whacks { width: 60px; text-align: right; }
+.col-loyalty { width: 60px; text-align: right; }
+.col-score { width: 55px; text-align: right; }
+.row {
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 6px;
+  margin-bottom: 2px;
+  font-size: 0.85rem;
+}
+.row.me { background: rgba(68,255,136,0.08); }
+.row .rank { width: 32px; text-align: center; font-size: 0.75rem; }
+.row .player { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #e0e0ff; }
+.row .party { width: 24px; text-align: center; font-size: 1rem; }
+.row .whacks { width: 60px; text-align: right; color: #ccccee; }
+.row .loyalty { width: 60px; text-align: right; }
+.row .score { width: 55px; text-align: right; font-weight: 700; color: #e0e0ff; }
+
+.submit-box {
+  margin-top: 16px;
+  padding: 14px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+}
+.submit-box h3 { font-size: 0.9rem; margin-bottom: 8px; }
+.submit-box input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: #e0e0ff;
+  font-size: 0.85rem;
+  text-align: center;
+  outline: none;
+  margin-bottom: 6px;
+}
+.submit-box input:focus { border-color: rgba(68,255,136,0.3); }
+.submit-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 30px;
+  border: none;
+  background: linear-gradient(135deg, #44ff88, #22cc66);
+  color: #0a0a20;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.submit-btn:hover { opacity: 0.9; }
+.submit-status {
+  font-size: 0.75rem;
+  color: #8888bb;
+  text-align: center;
+  margin-top: 6px;
+}
+.back-btn {
+  margin-top: 14px;
+  padding: 10px 24px;
+  border-radius: 30px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: #aaaacc;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>&#x1F3C6; Leaderboard</h1>
+  <div class="sub">See how you stack up!</div>
+  <div id="lbContent"></div>
+
+  <div class="submit-box" id="submitBox">
+    <h3>Submit Your Score</h3>
+    <input id="lbHandle" placeholder="Your handle (e.g. MAGA King)" maxlength="20">
+    <input id="lbEmail" type="email" placeholder="Email (optional &mdash; challenge friends)">
+    <button class="submit-btn" id="submitBtn">&#x1F680; Submit to Leaderboard</button>
+    <div class="submit-status" id="submitStatus"></div>
+  </div>
+
+  <button class="back-btn" id="simBtn">&#x1F3AE; Simulate a Game Score</button>
+</div>
+
+<script>
+(function(){
+  const LS = 'wap_lb_demo';
+  const LS_PENDING = 'wap_pending_demo';
+
+  function partyDot(p){
+    var c = p === 'R' ? '#ff4444' : p === 'D' ? '#4488ff' : '#44ff88';
+    return '<span style="color:'+c+'">&#x25CF;</span>';
+  }
+
+  function seedData(){
+    var existing = JSON.parse(localStorage.getItem(LS) || '[]');
+    if(existing.length) return existing;
+    var fakes = [
+      {nickname:'MAGA King',      party:'R', total:92, loyalty:98, score:902},
+      {nickname:'DonkeyFanatic',  party:'D', total:87, loyalty:95, score:827},
+      {nickname:'CentristGal',    party:'I', total:73, loyalty:91, score:664},
+      {nickname:'TheRealSteve',   party:'R', total:68, loyalty:87, score:592},
+      {nickname:'BlueWave2026',   party:'D', total:81, loyalty:72, score:583},
+      {nickname:'LibertyBelle',   party:'R', total:55, loyalty:94, score:517},
+      {nickname:'PolWatcher',     party:'I', total:62, loyalty:80, score:496},
+      {nickname:'GOPatriot',      party:'R', total:48, loyalty:96, score:461},
+      {nickname:'DemocracyNow',   party:'D', total:59, loyalty:76, score:448},
+      {nickname:'NoLabels',       party:'I', total:51, loyalty:83, score:423},
+    ];
+    localStorage.setItem(LS, JSON.stringify(fakes));
+    return fakes;
+  }
+
+  function render(){
+    var el = document.getElementById('lbContent');
+    if(!el) return;
+    var entries = seedData();
+    entries.sort(function(a,b){ return b.score - a.score; });
+
+    var medals = ['&#x1F947;','&#x1F948;','&#x1F949;'];
+    var myEntry = JSON.parse(localStorage.getItem('wap_my_demo') || 'null');
+    var h = '';
+
+    // header
+    h += '<div class="tbl-header">';
+    h += '<span class="col-rank">#</span>';
+    h += '<span class="col-player">Player</span>';
+    h += '<span class="col-party">&#x25CF;</span>';
+    h += '<span class="col-whacks">Whacks</span>';
+    h += '<span class="col-loyalty">Loyalty</span>';
+    h += '<span class="col-score">Score</span>';
+    h += '</div>';
+
+    for(var i=0; i<entries.length; i++){
+      var e = entries[i];
+      var rank = i < 3 ? medals[i] : '#'+(i+1);
+      var isMe = myEntry && e.total === myEntry.total && e.nickname === myEntry.nickname;
+      var loyCol = e.loyalty >= 90 ? '#44ff88' : e.loyalty >= 70 ? '#ffcc44' : '#ff6666';
+      var dotCol = e.party === 'R' ? '#ff4444' : e.party === 'D' ? '#4488ff' : '#44ff88';
+
+      h += '<div class="row'+(isMe?' me':'')+'">';
+      h += '<span class="rank">'+rank+'</span>';
+      h += '<span class="player">'+e.nickname+'</span>';
+      h += '<span class="party" style="color:'+dotCol+'">&#x25CF;</span>';
+      h += '<span class="whacks">'+e.total+'</span>';
+      h += '<span class="loyalty" style="color:'+loyCol+'">'+e.loyalty+'%</span>';
+      h += '<span class="score">'+e.score+'</span>';
+      h += '</div>';
+    }
+
+    el.innerHTML = h;
+
+    // Show submit box if pending
+    var pending = JSON.parse(localStorage.getItem(LS_PENDING) || 'null');
+    var box = document.getElementById('submitBox');
+    if(box) box.style.display = pending ? 'block' : 'none';
+  }
+
+  function submit(){
+    var pending = JSON.parse(localStorage.getItem(LS_PENDING) || 'null');
+    if(!pending){
+      document.getElementById('submitStatus').textContent = 'No pending score. Hit Simulate first!';
+      return;
+    }
+    var handle = (document.getElementById('lbHandle').value || '').trim() || 'Anonymous';
+    var email = (document.getElementById('lbEmail').value || '').trim();
+    var entries = JSON.parse(localStorage.getItem(LS) || '[]');
+    entries.push({
+      nickname: handle.substring(0,20),
+      email: email,
+      party: pending.party,
+      total: pending.total,
+      loyalty: pending.loyalty,
+      score: pending.score
+    });
+    localStorage.setItem(LS, JSON.stringify(entries));
+    localStorage.setItem('wap_my_demo', JSON.stringify({nickname:handle.substring(0,20), total:pending.total}));
+    localStorage.removeItem(LS_PENDING);
+    document.getElementById('submitBox').style.display = 'none';
+    document.getElementById('submitStatus').textContent = '&#x2705; Submitted!';
+    render();
+  }
+
+  function simulate(){
+    var parties = ['R','D','I'];
+    var party = parties[Math.floor(Math.random() * 3)];
+    var total = 30 + Math.floor(Math.random() * 60);
+    var loyalty = 40 + Math.floor(Math.random() * 55);
+    var score = Math.round((loyalty * total) / 10);
+    localStorage.setItem(LS_PENDING, JSON.stringify({
+      party: party, total: total, loyalty: loyalty, score: score
+    }));
+    render();
+    document.getElementById('submitStatus').textContent =
+      'Score generated: ' + total + ' whacks, ' + loyalty + '% loyalty, ' + score + ' points. Enter handle & submit!';
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', submit);
+  document.getElementById('simBtn').addEventListener('click', simulate);
+
+  render();
+})();
+</script>
+</body>
+</html>

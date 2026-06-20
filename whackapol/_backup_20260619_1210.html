@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Whack-a-Pol&quot;,&quot;start_url&quot;:&quot;./whackapol.html&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#0a0a1a&quot;}">
+<title>Whack-a-Pol 🎯</title>
+<meta name="theme-color" content="#0a0a1a">
+<meta name="description" content="Whack-a-Pol — Smack politicians, find your alignment!">
+<meta property="og:title" content="Whack-A-Pol">
+<meta property="og:description" content="Smack politicians, find your political alignment! 35-second rounds, 42 pols.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://192.168.1.126:8443/polportraits/trump.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:#0a0a1a;
+  color:#e0e0ff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  min-height:100vh;
+  overflow:hidden;
+}
+
+/* ===== SCREENS ===== */
+.screen{display:none;width:100%;max-width:480px;padding:12px;flex-direction:column;align-items:center;height:100vh;height:100vh}
+.screen.active{display:flex}
+#startScreen{justify-content:center;gap:20px}
+#gameScreen{justify-content:space-between;padding-top:8px;padding-bottom:8px}
+#endScreen{justify-content:center;gap:16px;overflow-y:auto}
+
+/* ===== START SCREEN ===== */
+.title{font-size:3.2rem;font-weight:900;text-align:center;line-height:1.1}
+.title .whack{background:linear-gradient(135deg,#ff3366,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.title .pol{background:linear-gradient(135deg,#33ccff,#9333ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{font-size:1.2rem;color:#8888bb;text-align:center;margin-top:-8px}
+.subtitle .emoji{font-size:1.2rem;-webkit-text-fill-color:initial}
+.start-btn{
+  background:linear-gradient(135deg,#ff3366,#9333ff);
+  border:none;color:#fff;font-size:1.7rem;font-weight:800;
+  padding:18px 48px;border-radius:50px;cursor:pointer;
+  box-shadow:0 0 30px rgba(255,51,102,0.4),0 0 60px rgba(147,51,255,0.2);
+  transition:transform 0.15s,box-shadow 0.2s;
+  letter-spacing:1px;
+}
+.start-btn:active{transform:scale(0.95)}
+.start-btn:hover{box-shadow:0 0 40px rgba(255,51,102,0.6),0 0 80px rgba(147,51,255,0.3)}
+.rules-box{font-size:1rem;text-align:center;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:16px;padding:16px 20px;font-size:0.85rem;
+  color:#9999cc;line-height:1.6;max-width:380px;
+}
+
+/* ===== GAME HEADER ===== */
+.game-header{
+  display:flex;justify-content:space-between;align-items:center;
+  width:100%;padding:4px 6px;flex-shrink:0;
+}
+.score-group{display:flex;gap:6px;align-items:center}
+.score-badge{
+  display:flex;align-items:center;gap:3px;
+  padding:4px 10px;border-radius:20px;
+  font-size:0.75rem;font-weight:700;
+  border:1.5px solid rgba(255,255,255,0.1);
+  background:rgba(0,0,0,0.4);
+}
+.score-badge .num{font-size:0.95rem;min-width:20px;text-align:center}
+
+.timer{
+  font-size:1.4rem;font-weight:900;font-variant-numeric:tabular-nums;
+  min-width:48px;text-align:center;
+  background:linear-gradient(135deg,#ffcc00,#ff8800);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:1px;
+}
+.timer.warning{background:linear-gradient(135deg,#ff4444,#ff0044);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.total-score{font-size:0.8rem;color:#8888bb;text-align:center;padding:2px 0;flex-shrink:0}
+
+/* ===== PLAYING FIELD ===== */
+.field-container{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  width:100%;position:relative;overflow:hidden;
+  min-height:0;
+}
+.field{
+  position:relative;
+  width:100%;max-width:420px;
+  aspect-ratio:1;
+  background:radial-gradient(ellipse at center,rgba(30,20,60,0.6) 0%,rgba(10,10,30,0.8) 100%);
+  border-radius:24px;
+  border:2px solid rgba(255,255,255,0.05);
+  box-shadow:inset 0 0 60px rgba(0,0,0,0.5);
+  overflow:hidden;
+}
+
+/* ===== HOLE ===== */
+.hole{
+  position:absolute;
+  width:24%;height:24%;
+  border-radius:50%;
+  background:radial-gradient(ellipse at center,#1a1a33 0%,#0a0a1a 70%);
+  border:2px solid rgba(255,255,255,0.06);
+  box-shadow:inset 0 4px 12px rgba(0,0,0,0.8);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  transition:box-shadow 0.15s;
+}
+.hole:active{box-shadow:inset 0 2px 6px rgba(0,0,0,0.9),0 0 20px rgba(255,255,255,0.1)}
+
+
+/* ===== POLITICIAN SPRITE ===== */
+.politician{
+  position:absolute;
+  width:90%;height:90%;
+  border-radius:50%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  pointer-events:none;
+  transform:scale(0);
+  transition:transform 0.12s cubic-bezier(0.34,1.56,0.64,1);
+  z-index:2;
+}
+.politician.active{transform:scale(1)}
+.politician .avatar{overflow:hidden;
+  font-size:4.0rem;line-height:1;
+  filter:drop-shadow(0 0 6px rgba(255,255,255,0.3));
+}
+.politician .name{
+  font-size:0.75rem;font-weight:700;margin-top:3px;
+  white-space:nowrap;letter-spacing:0.3px;
+  text-shadow:0 0 8px rgba(0,0,0,0.8);
+  line-height:1;
+}
+/* Party colors */
+.politician .avatar{overflow:hidden;color:#ffffff}
+
+.politician{border:2.5px solid rgba(255,255,255,0.25);box-shadow:0 0 12px rgba(255,255,255,0.08),inset 0 0 10px rgba(255,255,255,0.05);background:radial-gradient(circle,rgba(200,200,255,0.12),rgba(200,200,255,0.04))}
+
+/* ===== WHACK FLASH ===== */
+.whack-flash{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  border-radius:inherit;
+  pointer-events:none;
+  z-index:5;
+  transform:scale(0);
+}
+.whack-flash{background:radial-gradient(circle,rgba(255,255,255,0.4),transparent 60%);}
+.whack-flash.show{
+  animation:flashPop 0.25s ease-out forwards;
+}
+@keyframes flashPop{
+  0%{transform:scale(0.5);opacity:1}
+  50%{transform:scale(1.2);opacity:0.8}
+  100%{transform:scale(1.5);opacity:0}
+}
+
+/* ===== SCORE POPUP ===== */
+.score-popup{
+  position:absolute;
+  font-size:1.8rem;font-weight:900;
+  pointer-events:none;z-index:10;
+  animation:scoreFloat 0.6s ease-out forwards;
+  text-shadow:0 0 12px currentColor;
+}
+@keyframes scoreFloat{
+  0%{opacity:1;transform:translateY(0) scale(0.5)}
+  30%{transform:translateY(-20px) scale(1.2);opacity:1}
+  100%{transform:translateY(-60px) scale(0.8);opacity:0}
+}
+
+/* ===== END SCREEN ===== */
+.result-card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:20px;padding:20px 24px;
+  width:100%;max-width:380px;
+  text-align:center;
+}
+.result-card h2{
+  font-size:1.6rem;margin-bottom:4px;
+  background:linear-gradient(135deg,#ffcc00,#ff8800);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.result-card .sub{font-size:0.85rem;color:#8888bb;margin-bottom:16px}
+.alignment-bar{
+  margin:8px 0;display:flex;align-items:center;gap:10px;
+}
+.alignment-bar .label{font-size:0.8rem;font-weight:700;min-width:70px;text-align:right}
+.alignment-bar .track{flex:1;height:14px;background:rgba(255,255,255,0.05);border-radius:10px;overflow:hidden;position:relative}
+.alignment-bar .fill{height:100%;border-radius:10px;transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.75rem;font-weight:700;min-width:0}
+.alignment-bar .pct{font-size:0.8rem;font-weight:700;min-width:40px;text-align:left}
+.alignment-bar.red .fill{background:linear-gradient(90deg,#ff4444,#ff6688)}
+.alignment-bar.blue .fill{background:linear-gradient(90deg,#44aaff,#66ccff)}
+.alignment-bar.purple .fill{background:linear-gradient(90deg,#bb66ff,#dd88ff)}
+.aligntext{
+  font-size:1.3rem;font-weight:900;margin:12px 0 4px;
+  background:linear-gradient(135deg,#33ccff,#9333ff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.breakdown-detail{font-size:0.8rem;color:#9999cc;margin-bottom:12px;line-height:1.5}
+.end-buttons{
+  display:flex;gap:10px;justify-content:center;margin-top:8px;
+}
+.play-again-btn{
+  background:linear-gradient(135deg,#ff3366,#9333ff);
+  border:none;color:#fff;font-size:1.1rem;font-weight:800;
+  padding:14px 36px;border-radius:50px;cursor:pointer;
+  box-shadow:0 0 20px rgba(255,51,102,0.3);
+  transition:transform 0.15s;
+  letter-spacing:0.5px;
+}
+.play-again-btn:active{transform:scale(0.95)}
+
+/* ===== TAP INDICATOR ===== */
+.tap-ripple{
+  position:absolute;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.3);
+  pointer-events:none;z-index:20;
+  animation:rippleOut 0.4s ease-out forwards;
+}
+@keyframes rippleOut{
+  0%{width:0;height:0;opacity:1;transform:translate(-50%,-50%)}
+  100%{width:100px;height:100px;opacity:0;transform:translate(-50%,-50%)}
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:420px){
+  .title{font-size:2rem}
+  .score-badge{font-size:0.65rem;padding:3px 7px}
+  .score-badge .num{font-size:0.8rem;min-width:16px}
+  .timer{font-size:1.1rem;min-width:38px}
+  .politician .avatar{overflow:hidden;font-size:1.2rem}
+  
+  .result-card{padding:14px 16px}
+  .aligntext{font-size:1.1rem}
+}
+@media(min-width:600px){
+  #startScreen{padding:40px;gap:24px}
+  .title{font-size:4.5rem}
+  .subtitle{font-size:1.4rem}
+  .rules-box{font-size:1.1rem;line-height:1.6;padding:20px 24px;text-align:center}
+  .field{max-width:580px}
+  .politician .avatar{overflow:hidden;font-size:2rem}
+  .politician .name{font-size:0.6rem}
+}
+@media(min-height:800px){
+  .game-header{padding:8px 6px}
+}
+
+/* ===== PWA FALLBACK ===== */
+.pwa-badge{
+  position:fixed;bottom:8px;right:8px;
+  font-size:0.6rem;color:#555588;opacity:0.5;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== START SCREEN ===== -->
+<div id="startScreen" class="screen active">
+  <div class="title">
+    <div class="whack">WHACK-</div>
+    <div class="pol">A-POL</div>
+  </div>
+  <div class="subtitle" style="font-size:1.2rem">Be a king-maker, your party's juggernaut!</div>
+  <div class="subtitle" style="margin-top:2px;font-size:1.8rem">Whack the opposition!</div>
+  <div class="rules-box">
+    35-second rounds, 42 politicians<br>
+    Prove your loyalty<br>
+    Whack the crap out of<br>
+    those other guys
+  </div>
+  <button class="start-btn" id="startBtn">▶&nbsp; PLAY</button>
+</div>
+
+  <!-- Decorative mascots -->
+  <div style="position:fixed;left:25%;top:45%;transform:translateY(-50%);font-size:9rem;opacity:0.12;pointer-events:none;user-select:none;z-index:0">🐴</div>
+  <div style="position:fixed;right:25%;top:45%;transform:translateY(-50%);font-size:10rem;opacity:0.12;pointer-events:none;user-select:none;z-index:0">🐘</div>
+<!-- ===== GAME SCREEN ===== -->
+<div id="gameScreen" class="screen">
+  <div class="game-header">
+    <div class="score-group" style="display:none">
+      <div class="score-badge" style="color:#ff6666">🔴 <span class="num" id="scoreR">0</span></div>
+      <div class="score-badge" style="color:#66bbff">🔵 <span class="num" id="scoreD">0</span></div>
+      <div class="score-badge" style="color:#cc88ff">🟣 <span class="num" id="scoreI">0</span></div>
+    </div>
+    <div class="timer" id="timerDisplay">35</div>
+    <div style="font-size:0.65rem;color:#555577;text-align:center;width:100%;margin-top:-2px">Blind whacking — no party clues</div>
+  </div>
+  <div class="total-score">Total: <span id="totalScore">0</span></div>
+  <div class="field-container">
+    <div class="field" id="field"></div>
+  </div>
+</div>
+
+<!-- ===== END SCREEN ===== -->
+
+<!-- ===== PARTY QUIZ SCREEN ===== -->
+<div id="quizScreen" class="screen">
+  <div style="text-align:center;padding:30px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;">
+    <div style="font-size:2rem;margin-bottom:4px;">🗳️</div>
+    <div style="font-size:1.2rem;font-weight:700;color:#e0e0ff;margin-bottom:4px;">Before we reveal...</div>
+    <div style="font-size:0.95rem;color:#8888bb;margin-bottom:16px;">What party do YOU identify with?</div>
+        <div class="quiz-options" style="display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;justify-content:center;width:100%;max-width:340px">
+      <button class="quiz-btn" data-party="republican" style="background:linear-gradient(135deg,#cc2222,#ff4444);border:none;color:#fff;font-size:0.85rem;font-weight:700;padding:8px 14px;border-radius:30px;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;transition:transform 0.15s">🔴 GOP</button>
+      <button class="quiz-btn" data-party="democrat" style="background:linear-gradient(135deg,#2266cc,#44aaff);border:none;color:#fff;font-size:0.85rem;font-weight:700;padding:8px 14px;border-radius:30px;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;transition:transform 0.15s">🔵 DEM</button>
+      <button class="quiz-btn" data-party="independent" style="background:linear-gradient(135deg,#8844cc,#bb66ff);border:none;color:#fff;font-size:0.85rem;font-weight:700;padding:8px 14px;border-radius:30px;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;transition:transform 0.15s">🟣 IND</button>
+      <button class="quiz-btn" data-party="none" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#aaaacc;font-size:0.8rem;font-weight:600;padding:7px 12px;border-radius:30px;cursor:pointer;touch-action:manipulation">⏭ Skip</button>
+    </div>
+    <div style="margin-top:12px;width:100%;max-width:280px">
+      <input type="email" id="emailInput" placeholder="Email (optional — leaderboard)" style="width:100%;padding:8px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e0e0ff;font-size:0.85rem;text-align:center;outline:none" autocomplete="email" autocapitalize="none">
+    </div>
+    <div class="quiz-btn-hint" style="font-size:0.75rem;color:#666688;margin-top:8px;">Your answer stays private — results below</div>
+  </div>
+</div>
+
+</div>
+
+<!-- ===== LEADERBOARD ===== -->
+<div id="leaderboardScreen" class="screen" style="justify-content:flex-start;padding-top:20px;overflow-y:auto">
+  <div style="font-size:1.7rem;font-weight:800;margin-bottom:4px">🏆 Leaderboard</div>
+  <div style="font-size:0.75rem;color:#666688;margin-bottom:16px">Top 10 whackers</div>
+  <div id="lbContent" style="width:100%;max-width:360px">
+    <div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">Play a game to appear on the leaderboard!</div>
+  </div>
+  <button onclick="document.getElementById('leaderboardScreen').classList.remove('active');document.getElementById('endScreen').classList.add('active')"
+    style="margin-top:16px;padding:10px 30px;border-radius:30px;border:1px solid #555;background:transparent;color:#888;font-size:0.9rem;cursor:pointer;touch-action:manipulation">Back</button>
+</div>
+
+<div id="endScreen" class="screen">
+  <div class="result-card">
+    <h2>🎯 GAME OVER</h2>
+    <div class="sub">Your ACTUAL Political Alignment</div>
+    <div style="font-size:3rem;margin-bottom:4px;" id="roastIcon">🗳️</div>
+    <div class="aligntext" id="alignmentLabel">You're 100% Independent</div>
+    <div style="font-size:0.85rem;color:#ccccee;margin-bottom:8px;line-height:1.4;padding:0 10px;" id="roastSub"></div>
+    <div class="breakdown-detail" id="breakdownDetail"></div>
+    <div id="alignmentBars"></div>
+    </div>
+  <div class="end-buttons">
+    <button class="play-again-btn" id="playAgainBtn">▶&nbsp; PLAY AGAIN</button>
+    <button id="viewLbBtn" style="margin-top:8px;padding:8px 24px;border-radius:30px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#8888bb;font-size:0.85rem;cursor:pointer;touch-action:manipulation">🏆 Leaderboard</button>
+  </div>
+</div>
+
+<div class="pwa-badge">⚡ PWA Ready</div>
+
+<script>
+// =====================================================================
+//  WHACK-A-POL — Full Game Engine
+// =====================================================================
+
+(function(){
+'use strict';
+
+// ===== POLITICIAN DATABASE =====
+const POLITICIANS = [
+  // ===== REPUBLICANS (20) =====
+  {name:'Trump',    emoji:'🦅', party:'republican', color:'#ff4444', photo:'polportraits/trump.jpg'},
+  {name:'DeSantis',  emoji:'🏝️', party:'republican', color:'#ff4444', photo:'polportraits/desantis.jpg'},
+  {name:'Haley',     emoji:'🎯', party:'republican', color:'#ff4444', photo:'polportraits/haley.jpg'},
+  {name:'Ramaswamy', emoji:'🔬', party:'republican', color:'#ff4444', photo:'polportraits/ramaswamy.jpg'},
+  {name:'Graham',    emoji:'⚖️', party:'republican', color:'#ff4444', photo:'polportraits/graham.jpg'},
+  {name:'Cruz',      emoji:'⛽', party:'republican', color:'#ff4444', photo:'polportraits/cruz.jpg'},
+  {name:'McConnell',  emoji:'🏛️', party:'republican', color:'#ff4444', photo:'polportraits/mcconnell.jpg'},
+  {name:'Stefanik',  emoji:'📢', party:'republican', color:'#ff4444', photo:'polportraits/stefanik.jpg'},
+  {name:'Gaetz',     emoji:'🎙️', party:'republican', color:'#ff4444', photo:'polportraits/gaetz.jpg'},
+  {name:'Greene',    emoji:'🔍', party:'republican', color:'#ff4444', photo:'polportraits/greene.jpg'},
+  {name:'Pence',     emoji:'🙏', party:'republican', color:'#ff4444', photo:'polportraits/pence.jpg'},
+  {name:'Rubio',     emoji:'🌴', party:'republican', color:'#ff4444', photo:'polportraits/rubio.jpg'},
+  {name:'Scott',     emoji:'🏈', party:'republican', color:'#ff4444', photo:'polportraits/timscott.jpg'},
+  {name:'Vance',     emoji:'📖', party:'republican', color:'#ff4444', photo:'polportraits/vance.jpg'},
+  {name:'Cotton',    emoji:'⚔️', party:'republican', color:'#ff4444', photo:'polportraits/cotton.jpg'},
+  {name:'Hawley',    emoji:'📜', party:'republican', color:'#ff4444', photo:'polportraits/hawley.jpg'},
+  {name:'McCarthy',  emoji:'🏛️', party:'republican', color:'#ff4444', photo:'polportraits/mccarthy.jpg'},
+  {name:'Boebert',   emoji:'🔫', party:'republican', color:'#ff4444', photo:'polportraits/boebert.jpg'},
+  {name:'Jordan',    emoji:'🏋️', party:'republican', color:'#ff4444', photo:'polportraits/jordan.jpg'},
+  {name:'Noem',      emoji:'🌾', party:'republican', color:'#ff4444', photo:'polportraits/noem.jpg'},
+  // ===== DEMOCRATS (20) =====
+  {name:'Biden',     emoji:'🇺🇸', party:'democrat', color:'#44aaff', photo:'polportraits/biden.jpg'},
+  {name:'Harris',    emoji:'👩⚖️', party:'democrat', color:'#44aaff', photo:'polportraits/harris.jpg'},
+  {name:'Sanders',   emoji:'🏔️', party:'democrat', color:'#44aaff', photo:'polportraits/sanders.jpg'},
+  {name:'Warren',    emoji:'📉', party:'democrat', color:'#44aaff', photo:'polportraits/warren.jpg'},
+  {name:'Booker',    emoji:'🥗', party:'democrat', color:'#44aaff', photo:'polportraits/booker.jpg'},
+  {name:'Ocasio-Cortez', emoji:'🏠', party:'democrat', color:'#44aaff', photo:'polportraits/ocasio-cortez.jpg'},
+  {name:'Pelosi',    emoji:'🗳️', party:'democrat', color:'#44aaff', photo:'polportraits/pelosi.jpg'},
+  {name:'Schumer',   emoji:'🗽', party:'democrat', color:'#44aaff', photo:'polportraits/schumer.jpg'},
+  {name:'Newsom',    emoji:'🌊', party:'democrat', color:'#44aaff', photo:'polportraits/newsom.jpg'},
+  {name:'Buttigieg',  emoji:'🚆', party:'democrat', color:'#44aaff', photo:'polportraits/buttigieg.jpg'},
+  {name:'Clinton',   emoji:'👠', party:'democrat', color:'#44aaff', photo:'polportraits/clinton.jpg'},
+  {name:'Obama',     emoji:'🌟', party:'democrat', color:'#44aaff', photo:'polportraits/obama.jpg'},
+  {name:'Whitmer',   emoji:'🚗', party:'democrat', color:'#44aaff', photo:'polportraits/whitmer.jpg'},
+  {name:'Pritzker',  emoji:'💰', party:'democrat', color:'#44aaff', photo:'polportraits/pritzker.jpg'},
+  {name:'Klobuchar', emoji:'❄️', party:'democrat', color:'#44aaff', photo:'polportraits/klobuchar.jpg'},
+  {name:'Warnock',   emoji:'⛪', party:'democrat', color:'#44aaff', photo:'polportraits/warnock.jpg'},
+  {name:'Ossoff',    emoji:'🎬', party:'democrat', color:'#44aaff', photo:'polportraits/ossoff.jpg'},
+  {name:'Gallego',   emoji:'⚡', party:'democrat', color:'#44aaff', photo:'polportraits/gallego.jpg'},
+  {name:'Jeffries',  emoji:'🎤', party:'democrat', color:'#44aaff', photo:'polportraits/jeffries.jpg'},
+  {name:'Beshear',   emoji:'⛰️', party:'democrat', color:'#44aaff', photo:'polportraits/beshear.jpg'},
+  // ===== INDEPENDENTS (2) =====
+  {name:'Manchin',   emoji:'⚫', party:'independent', color:'#bb66ff', photo:'polportraits/manchin.jpg'},
+  {name:'Sinema',    emoji:'🦄', party:'independent', color:'#bb66ff', photo:'polportraits/sinema.jpg'},
+];
+
+// ===== DOM REFS =====
+const $ = id => document.getElementById(id);
+const startScreen   = $('startScreen');
+const quizScreen    = $('quizScreen');
+const gameScreen    = $('gameScreen');
+const endScreen     = $('endScreen');
+const field         = $('field');
+const timerDisplay  = $('timerDisplay');
+const scoreR        = $('scoreR');
+const scoreD        = $('scoreD');
+const scoreI        = $('scoreI');
+const totalScoreEl = $('totalScore');
+const startBtn      = $('startBtn');
+const playAgainBtn  = $('playAgainBtn');
+const alignmentLabel= $('alignmentLabel');
+const breakdownDetail=$('breakdownDetail');
+const alignmentBars = $('alignmentBars');
+
+// ===== GAME STATE =====
+let state = {
+  scores: {republican:0, democrat:0, independent:0},
+  timeLeft: 30,
+  totalWhacks: 0,
+  playing: false,
+  timerId: null,
+  spawnTimerId: null,
+  activeHoles: [],   // indices into holes[]
+  holeOccupants: [], // which politician index is in each hole (-1 = empty)
+};
+
+// ===== HOLE MANAGEMENT =====
+const HOLE_COUNT = 9;
+let holes = [];
+
+function layoutHoles(){
+  field.innerHTML = '';
+  holes = [];
+  state.holeOccupants = new Array(HOLE_COUNT).fill(-1);
+  state.activeHoles = [];
+
+  const positions = [
+    // 3x3 grid - slightly tighter to prevent cutoff
+    {x:15, y:15}, {x:50, y:13}, {x:80, y:15},
+    {x:13, y:50}, {x:50, y:50}, {x:87, y:50},
+    {x:15, y:83}, {x:50, y:87}, {x:78, y:83},
+  ];
+
+  for(let i=0; i<HOLE_COUNT; i++){
+    const hole = document.createElement('div');
+    hole.className = 'hole';
+    hole.dataset.index = i;
+    hole.style.left = (positions[i].x - 14) + '%';
+    hole.style.top  = (positions[i].y - 14) + '%';
+    // Politician sprite wrapper
+    const pol = document.createElement('div');
+    pol.className = 'politician';
+    pol.dataset.polIndex = -1;
+    const av = document.createElement('div');
+    av.className = 'avatar';
+    pol.appendChild(av);
+    hole.appendChild(pol);
+    // Flash overlay
+    const flash = document.createElement('div');
+    flash.className = 'whack-flash';
+    hole.appendChild(flash);
+    // Click handler
+    hole.addEventListener('click', e => onHoleClick(i, e));
+    hole.addEventListener('touchstart', e => {
+      // Prevent double-fire on mobile
+      if(!e.target.closest('.hole')) return;
+    }, {passive:true});
+    field.appendChild(hole);
+    holes.push({el:hole, politician:pol, flash, idx:i});
+  }
+}
+
+// ===== SPAWNING =====
+function spawnPolitician(){
+  // Track used politicians per game
+  if(!window._usedPols) window._usedPols = [];
+  // Find unused politicians
+  var available = POLITICIANS.filter(function(p,i){ return window._usedPols.indexOf(i) === -1; });
+  if(available.length === 0){
+    window._usedPols = []; // Reset pool if exhausted
+    available = POLITICIANS;
+  }
+  var pool = available;
+
+  if(!state.playing) return;
+
+  // Find empty holes
+  const empty = [];
+  for(let i=0; i<HOLE_COUNT; i++){
+    if(state.holeOccupants[i] === -1) empty.push(i);
+  }
+  if(empty.length === 0) return;
+
+  // Pick random hole
+  const holeIdx = empty[Math.floor(Math.random() * empty.length)];
+  // Pick random politician (weighted slightly toward variety)
+  // Pick from pool to avoid repeats
+  const polIdx = POLITICIANS.indexOf(pool[Math.floor(Math.random() * pool.length)]);
+  window._usedPols.push(polIdx);
+
+  const polData = POLITICIANS[polIdx];
+  const hole = holes[holeIdx];
+  const polEl = hole.politician;
+
+  // Set occupant
+  state.holeOccupants[holeIdx] = polIdx;
+  state.activeHoles.push(holeIdx);
+
+  // Configure sprite
+  polEl.className = 'politician ' + polData.party;
+  polEl.dataset.polIndex = polIdx;
+    var avatarEl = polEl.querySelector('.avatar');
+  avatarEl.textContent = '';
+  if(polData.photo){
+    var img = document.createElement('img');
+    img.src = polData.photo;
+    img.alt = polData.name || 'Pol';
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;display:block';
+    img.loading = 'lazy';
+    avatarEl.appendChild(img);
+  } else {
+    avatarEl.textContent = polData.emoji;
+  }
+  var np = polEl.querySelector('.polname');
+  if(!np){ np=document.createElement('div'); np.className='polname'; polEl.appendChild(np); }
+  np.textContent = polData.name;
+  np.style.cssText = 'display:none;';
+
+  // Animate in
+  requestAnimationFrame(() => {
+    polEl.classList.add('active');
+  });
+
+  // Auto-dismiss after 800-1800ms
+  const duration = 2000 + Math.random() * 1200;
+  const dismissTimer = setTimeout(() => {
+    dismissPolitician(holeIdx, false);
+  }, duration);
+
+  // Store timer on hole for cleanup
+  hole._dismissTimer = dismissTimer;
+}
+
+function dismissPolitician(holeIdx, wasWhacked){
+  const hole = holes[holeIdx];
+  if(!hole) return;
+
+  const polEl = hole.politician;
+  const currentIdx = parseInt(polEl.dataset.polIndex);
+  if(currentIdx === -1 || currentIdx === undefined) return;
+
+  polEl.classList.remove('active');
+
+  // Clear dismiss timer if exists
+  if(hole._dismissTimer){
+    clearTimeout(hole._dismissTimer);
+    hole._dismissTimer = null;
+  }
+
+  // Remove from active holes
+  const pos = state.activeHoles.indexOf(holeIdx);
+  if(pos !== -1) state.activeHoles.splice(pos, 1);
+  state.holeOccupants[holeIdx] = -1;
+  polEl.dataset.polIndex = -1;
+}
+
+// ===== CLICK / TAP HANDLING =====
+function onHoleClick(holeIdx, event){
+  if(!state.playing) return;
+
+  const hole = holes[holeIdx];
+  const polEl = hole.politician;
+  const polIdx = parseInt(polEl.dataset.polIndex);
+
+  // Miss (empty hole)
+  if(polIdx === -1 || polIdx === undefined || !polEl.classList.contains('active')){
+    playSound('miss');
+    showTapRipple(event);
+    return;
+  }
+
+  if(!state.playing) return;
+
+  const polData = POLITICIANS[polIdx];
+
+  // Record whack
+  state.scores[polData.party]++;
+  state.totalWhacks++;
+  updateScoreDisplay();
+
+  // Visual feedback
+  playSound('whack');
+  showScorePopup(hole.el, polData.party);
+  showWhackFlash(hole.el, polData.party);
+  showTapRipple(event);
+
+  // Dismiss
+  dismissPolitician(holeIdx, true);
+}
+
+function showWhackFlash(el, party){
+  const flash = el.querySelector('.whack-flash');
+  if(!flash) return;
+  flash.className = 'whack-flash ' + party;
+  // Force reflow then show
+  void flash.offsetWidth;
+  flash.classList.add('show');
+  setTimeout(() => { flash.classList.remove('show'); }, 300);
+}
+
+function showScorePopup(el, party){
+  const popup = document.createElement('div');
+  popup.className = 'score-popup';
+  popup.textContent = String.fromCodePoint(0x2728);
+  popup.style.color = '#ffffff';
+  popup.style.fontSize = '1.2rem';
+  el.appendChild(popup);
+  setTimeout(() => { popup.remove(); }, 700);
+}
+
+function showTapRipple(event){
+  if(!event) return;
+  let x, y;
+  if(event.changedTouches){
+    const t = event.changedTouches[0];
+    const rect = field.getBoundingClientRect();
+    x = t.clientX - rect.left;
+    y = t.clientY - rect.top;
+  } else if(event.clientX !== undefined){
+    const rect = field.getBoundingClientRect();
+    x = event.clientX - rect.left;
+    y = event.clientY - rect.top;
+  } else return;
+
+  const ripple = document.createElement('div');
+  ripple.className = 'tap-ripple';
+  ripple.style.left = x + 'px';
+  ripple.style.top = y + 'px';
+  field.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+}
+
+// ===== SCORE DISPLAY =====
+function updateScoreDisplay(){
+  scoreR.textContent = state.scores.republican;
+  scoreD.textContent = state.scores.democrat;
+  scoreI.textContent = state.scores.independent;
+  totalScoreEl.textContent = state.totalWhacks;
+}
+
+// ===== TIMER =====
+function updateTimer(){
+  timerDisplay.textContent = state.timeLeft;
+  if(state.timeLeft <= 5){
+    timerDisplay.classList.add('warning');
+  } else {
+    timerDisplay.classList.remove('warning');
+  }
+}
+
+// ===== SOUND ENGINE (Web Audio API — iOS friendly) =====
+let audioCtx = null;
+let audioUnlocked = false;
+
+// Call this once from a user gesture to unlock iOS audio
+function unlockAudio(){
+  if(audioUnlocked) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Create & play an empty buffer to force iOS audio unlock
+    var buf = audioCtx.createBuffer(1, 1, 44100);
+    var src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(0);
+    audioUnlocked = true;
+  } catch(e){}
+}
+
+function playSound(type){
+  try {
+    if(!audioCtx) unlockAudio();
+    if(!audioCtx) return;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+
+    if(type === 'whack'){
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.06);
+      gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.08);
+    } else if(type === 'miss'){
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.12);
+    } else if(type === 'spawn'){
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(1000, audioCtx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.1);
+    } else if(type === 'gameover'){
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.6);
+    }
+  } catch(e){
+    // Audio not available — silently ignore
+  }
+}
+
+// ===== GAME LOOP =====
+function startGame(){
+  // Init audio on user gesture (required for iOS)
+  unlockAudio();
+
+  // Reset used politicians tracking for new game
+  window._usedPols = [];
+
+  // Reset state
+  state.scores = {republican:0, democrat:0, independent:0};
+  state.timeLeft = 35;
+  state.totalWhacks = 0;
+  state.playing = true;
+
+  // Clear any lingering politicians
+  for(let i=0; i<HOLE_COUNT; i++){
+    dismissPolitician(i, false);
+  }
+
+  updateScoreDisplay();
+  updateTimer();
+
+  // Switch to game screen
+  startScreen.classList.remove('active');
+  endScreen.classList.remove('active');
+  quizScreen.classList.remove('active');
+  gameScreen.classList.add('active');
+
+  // Ensure field is laid out
+  if(holes.length === 0) layoutHoles();
+
+  // Start timer
+  state.timerId = setInterval(() => {
+    state.timeLeft--;
+    updateTimer();
+    if(state.timeLeft <= 0){
+      endGame();
+    }
+  }, 1000);
+
+  // Start spawning (first spawn after a short delay)
+  setTimeout(() => {
+    if(!state.playing) return;
+    spawnPolitician();
+    playSound('spawn');
+    state.spawnTimerId = setInterval(() => {
+      if(!state.playing) return;
+      // Spawn 1-3 politicians at once based on time remaining
+      let count = 1;
+      if(state.timeLeft < 10) count = 2;
+      else if(state.timeLeft < 18) count = 2;
+      for(let c=0; c<count; c++){
+        setTimeout(() => spawnPolitician(), c * 400);
+      }
+      playSound('spawn');
+    }, 1500 + Math.random() * 800);
+  }, 1000);
+}
+
+
+// ===== ROAST MESSAGES =====
+function getRoastMessage(scores, playerParty){
+  const total = scores.republican + scores.democrat + scores.independent;
+  if(total === 0) return {msg: "Too scared to whack?", sub: "Next time show some courage!", icon: "🐔"};
+  
+  const rCnt = scores.republican, dCnt = scores.democrat, iCnt = scores.independent;
+  const rPct = Math.round((rCnt / total) * 100);
+  const dPct = Math.round((dCnt / total) * 100);
+  const iPct = total > 0 ? 100 - rPct - dPct : 0;
+  
+  let maxParty = 'republican', maxPct = rPct;
+  if(dPct > maxPct){ maxParty = 'democrat'; maxPct = dPct; }
+  if(iPct > maxPct){ maxParty = 'independent'; maxPct = iPct; }
+  
+  const partyLabel = {republican:'GOP', democrat:'DEM', independent:'IND'};
+  const partyName = {republican:'Republican', democrat:'Democrat', independent:'Independent'};
+  const oppName = {republican:'Democrats', democrat:'Republicans', independent:'everyone'};
+  
+  // Player declared a party
+  if(playerParty && playerParty !== 'none'){
+    const pName = partyName[playerParty];
+    const oName = oppName[playerParty];
+    const selfCnt = scores[playerParty] || 0;
+    const oppCnt = total - selfCnt;
+    
+    // Independent special handling
+    if(playerParty === 'independent'){
+      if(rCnt > dCnt && rCnt > iCnt) return {msg: "You're not so Independent!", sub: "You whacked more Republicans than anyone else. Bias detected!", icon: "👀"};
+      if(dCnt > rCnt && dCnt > iCnt) return {msg: "You're not so Independent!", sub: "You whacked more Democrats than anyone else. Lean much?", icon: "👀"};
+      if(iCnt > 0) return {msg: "A true Independent!", sub: "You found both of us! Respect.", icon: "🦏"};
+      return {msg: "You whacked everyone equally!", sub: "Truly bipartisan chaos.", icon: "🤝"};
+    }
+    
+        // Check: mostly opposition or mostly own party?
+    const selfPct = Math.round((selfCnt / total) * 100);
+
+    if(oppCnt > selfCnt){
+      // Mostly opposition - praise then gentle aim note
+      if(selfCnt === 0){
+        if(iCnt === 0) return {msg: "You're 100% " + pName + "!", sub: "Every single whack was on the opposition. Outstanding! Keen eye!", icon: "🎯"};
+        return {msg: "Great job, " + pName + "!", sub: "Excellent work on the opposition! But why hit Independents? Leave them alone!", icon: "🎯"};
+      }
+      return {msg: "Great job, " + pName + "!", sub: "Excellent aim! But you accidentally hit " + selfCnt + " of your own. Be more careful next time, " + pName + ".", icon: "🎯"};
+    }
+
+    // Whacked mostly own party - give hell!
+    let msg, sub, icon;
+
+    if(selfPct >= 80){
+      msg = selfCnt + " whacks on your own party?! You're a TRAITOR, " + pName + "!";
+      sub = selfPct + "% friendly fire. The party chair wants a word.";
+      icon = "😡";
+    } else if(selfPct >= 50){
+      msg = selfCnt + " of " + total + " whacks were YOUR OWN side?!";
+      sub = "Half your whacks were friendly fire. Get it together, " + pName + "!";
+      icon = "😵";
+    } else if(selfPct >= 25){
+      msg = selfCnt + " friendly fire whacks. Embarrassing, " + pName + ".";
+      sub = "You need to work on your aim. The opposition is right there!";
+      icon = "😒";
+    } else {
+      msg = selfCnt + " accidental whacks of your own party. Tsk tsk.";
+      sub = "It happens. Just don't let it happen again, " + pName + ".";
+      icon = "😐";
+    }
+    return {msg: msg, sub: sub, icon: icon};
+  }
+  
+  // Player skipped party selection
+  if(maxPct >= 80) return {msg: "You whacked " + maxPct + "% " + partyLabel[maxParty] + "!", sub: "You really hate those " + partyName[maxParty] + "s!", icon: "🔥"};
+  return {msg: "You whacked everyone!", sub: "Someone really went after the " + partyName[maxParty] + "s.", icon: "📊"}
+}
+
+function endGame(){
+  state.playing = false;
+  clearInterval(state.timerId);
+  clearInterval(state.spawnTimerId);
+
+  // Dismiss all remaining politicians
+  for(let i=0; i<HOLE_COUNT; i++){
+    dismissPolitician(i, false);
+  }
+
+  playSound('gameover');
+
+  // Show party quiz first
+  setTimeout(() => {
+    gameScreen.classList.remove('active');
+  quizScreen.classList.remove('active');
+    quizScreen.classList.add('active');
+  }, 400);
+}
+
+function showEndScreen(){
+  gameScreen.classList.remove('active');
+  quizScreen.classList.remove('active');
+  endScreen.classList.add('active');
+
+  const s = state.scores;
+  const total = state.totalWhacks || 1;
+
+    // Raw whack data for bars (receipts)
+  const aR = s.republican;
+  const aD = s.democrat;
+  const aI = s.independent;
+  const aTotal = aR + aD + aI || 1;
+  const rPct = Math.round((aR / aTotal) * 100);
+  const dPct = Math.round((aD / aTotal) * 100);
+  const iPct = Math.round((aI / aTotal) * 100);
+
+  // Alignment for proclamation: whacking opposition proves YOUR party loyalty
+  const alignR = s.democrat;    // Dems whacked = Republican alignment
+  const alignD = s.republican;  // GOP whacked = Democrat alignment
+  const alignI = s.independent;
+  const alignTotal = alignR + alignD + alignI || 1;
+  const rAlign = Math.round((alignR / alignTotal) * 100);
+  const dAlign = Math.round((alignD / alignTotal) * 100);
+  const iAlign = Math.round((alignI / alignTotal) * 100);
+
+  // Get roast (uses RAW scores for friendly fire detection)
+  const roast = getRoastMessage(s, playerParty);
+
+    // Determine proclamation: did they whack the opposition or their own party?
+  let label, alignParty;
+  if(playerParty && playerParty !== 'none'){
+    const selfCnt = s[playerParty] || 0;
+    const oppCnt = total - selfCnt;
+    
+    if(oppCnt > selfCnt){
+      // Whacked mostly opposition = whomever you hate most = opposite camp
+      const hateR = s.democrat;    // Hating Dems = you're Republican
+      const hateD = s.republican;  // Hating GOP = you're Democrat
+      const hateI = s.independent;
+      const hateTotal = hateR + hateD + hateI || 1;
+      const rHate = Math.round((hateR / hateTotal) * 100);
+      const dHate = Math.round((hateD / hateTotal) * 100);
+      const iHate = Math.round((hateI / hateTotal) * 100);
+      
+      if(rHate > dHate && rHate > iHate){
+        label = "You're " + rHate + "% Republican!";
+        alignParty = 'Republican';
+      } else if(dHate > rHate && dHate > iHate){
+        label = "You're " + dHate + "% Democrat!";
+        alignParty = 'Democrat';
+      } else if(iHate > rHate && iHate > dHate){
+        label = "You're " + iHate + "% Independent!";
+        alignParty = 'Independent';
+      } else {
+        label = "You're Bipartisan!";
+        alignParty = 'Bipartisan';
+      }
+    } else {
+      // Whacked mostly own party = friendly fire roast
+      const selfPct = Math.round((selfCnt / total) * 100);
+      if(selfPct >= 80){
+        label = selfCnt + " whacks on your own party?! You're a TRAITOR!";
+      } else if(selfPct >= 50){
+        label = selfCnt + " of " + total + " whacks were your own side?!";
+      } else {
+        label = selfCnt + " friendly fire whacks. Embarrassing.";
+      }
+      alignParty = null;
+    }
+  } else {
+    // No party selected - use hate rule too
+    if(rAlign > dAlign && rAlign > iAlign){
+      label = "You're " + rAlign + "% Republican!";
+      alignParty = 'Republican';
+    } else if(dAlign > rAlign && dAlign > iAlign){
+      label = "You're " + dAlign + "% Democrat!";
+      alignParty = 'Democrat';
+    } else if(iAlign > rAlign && iAlign > dAlign){
+      label = "You're " + iAlign + "% Independent!";
+      alignParty = 'Independent';
+    } else {
+      label = "You're Bipartisan!";
+      alignParty = 'Bipartisan';
+    }
+  }
+alignmentLabel.textContent = label;alignmentLabel.textContent = label;
+  document.getElementById('roastSub').innerHTML = roast.sub;
+  document.getElementById('roastIcon').textContent = roast.icon;
+
+  // Breakdown detail
+    const partyNames = {republican:'GOP', democrat:'DEM', independent:'IND', none:'None'};
+  const partyQ = playerParty ? partyNames[playerParty] || 'None' : 'Skipped';
+  breakdownDetail.innerHTML = `Whacks: ${total} | You identified as: ${partyQ}`;
+
+  // Alignment bars
+  alignmentBars.innerHTML = `
+    <div class="alignment-bar red">
+      <span class="label">GOP</span>
+      <div class="track"><div class="fill" style="width:${rPct}%">${aR}</div></div>
+      <span class="pct">${rPct}%</span>
+    </div>
+    <div class="alignment-bar blue">
+      <span class="label">DEM</span>
+      <div class="track"><div class="fill" style="width:${dPct}%">${aD}</div></div>
+      <span class="pct">${dPct}%</span>
+    </div>
+    <div class="alignment-bar purple">
+      <span class="label">IND</span>
+      <div class="track"><div class="fill" style="width:${iPct}%">${aI}</div></div>
+      <span class="pct">${iPct}%</span>
+    </div>
+  `;
+
+  // Trigger bar animations after render
+  requestAnimationFrame(() => {
+    const fills = alignmentBars.querySelectorAll('.fill');
+    fills.forEach(f => {
+      const w = f.style.width;
+      f.style.width = '0%';
+      requestAnimationFrame(() => {
+        f.style.width = w;
+      });
+    });
+  });
+
+  // Save to leaderboard
+  try {
+    var entries = JSON.parse(localStorage.getItem('wap_lb') || '[]');
+    var tw = state ? (state.scores.republican + state.scores.democrat + state.scores.independent) : 0;
+    if(tw > 0){
+      entries.push({score:tw, r:rPct, d:dPct, i:iPct, date:new Date().toISOString()});
+      entries.sort(function(a,b){ return b.score - a.score; });
+      if(entries.length > 50) entries = entries.slice(0,50);
+      localStorage.setItem('wap_lb', JSON.stringify(entries));
+    }
+  } catch(e){}
+}
+
+
+// ===== PARTY QUIZ =====
+// quizScreen already declared = $('quizScreen');
+let playerParty = null;
+document.querySelectorAll('.quiz-btn').forEach(btn => {
+  btn.addEventListener('click', function(){
+    const party = this.dataset.party;
+    playerParty = party;
+    // Button press feedback
+    this.style.transform = 'scale(0.92)';
+    setTimeout(() => {
+      showEndScreen();
+    }, 200);
+  });
+  btn.addEventListener('touchstart', function(e){
+    // Prevent scroll
+  }, {passive:true});
+});
+
+// ===== EVENT BINDINGS =====
+startBtn.addEventListener('click', startGame);
+playAgainBtn.addEventListener('click', () => {
+  endScreen.classList.remove('active');
+  quizScreen.classList.remove('active');
+  startScreen.classList.add('active');
+  playerParty = null;
+});
+
+// Prevent zoom on double-tap
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if(now - (document._lastTouch || 0) < 300) e.preventDefault();
+  document._lastTouch = now;
+}, {passive: false});
+
+// ===== INIT =====
+layoutHoles();
+
+// Prevent context menu on long-press
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// ===== SERVICE WORKER REGISTRATION (PWA) =====
+if('serviceWorker' in navigator){
+  // Lightweight PWA registration — will work once service worker is deployed
+  // For now, just the manifest is enough for "add to home screen"
+}
+
+console.log('🎯 Whack-a-Pol loaded. Ready to play!');
+console.log('👥 42 Politicians ready');
+console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
+
+})();
+
+// ===== LEADERBOARD =====
+(function(){
+  var id = function(x){ return document.getElementById(x); };
+  var viewLbBtn = id('viewLbBtn');
+  var endScreen = id('endScreen');
+  var lbScreen = id('leaderboardScreen');
+  function renderLeaderboard(){
+    var el = id('lbContent');
+    if(!el) return;
+    try {
+      var entries = JSON.parse(localStorage.getItem('wap_lb') || '[]');
+      if(!entries.length){
+        el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">No leaderboard entries yet. Play a game!</div>';
+        return;
+      }
+      entries.sort(function(a,b){ return b.score - a.score; });
+      var h = '<div style="display:flex;flex-direction:column;gap:4px">';
+      var medals = ['🥇','🥈','🥉'];
+      for(var i=0; i<Math.min(10, entries.length); i++){
+        var e = entries[i];
+        var rank = i < 3 ? medals[i] : '#'+(i+1);
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(255,255,255,0.03);border-radius:8px">';
+        h += '<span style="font-size:0.85rem">'+rank+' <span style="color:#aaaacc">'+e.score+' whacks</span></span>';
+        h += '<span style="font-size:0.75rem;color:#666688">'+e.r+'%/'+e.d+'%/'+e.i+'%</span>';
+        h += '</div>';
+      }
+      h += '</div>';
+      el.innerHTML = h;
+    } catch(e){
+      el.innerHTML = '<div style="color:red">Error loading leaderboard</div>';
+    }
+  }
+  if(viewLbBtn && endScreen && lbScreen){
+    viewLbBtn.addEventListener('click', function(){
+      endScreen.classList.remove('active');
+      lbScreen.classList.add('active');
+      renderLeaderboard();
+    });
+  }
+})();
+</script>
+</body>
+</html>
