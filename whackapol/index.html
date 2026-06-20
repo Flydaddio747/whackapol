@@ -314,7 +314,6 @@ body{
     <div style="font-size:0.65rem;color:#555577;text-align:center;width:100%;margin-top:-2px">Blind whacking — no party clues</div>
   </div>
   <div class="total-score">Total: <span id="totalScore">0</span></div>
-  <div id="hitEffect" style="position:absolute;top:12%;left:50%;transform:translateX(-50%);z-index:50;font-size:1.2rem;font-weight:800;color:#fff;text-shadow:0 0 20px rgba(255,255,255,0.5);pointer-events:none;opacity:0;transition:opacity 0.15s;white-space:nowrap;background:rgba(0,0,0,0.6);padding:4px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.15)"></div>
   <div class="field-container">
     <div class="field" id="field"></div>
   </div>
@@ -638,7 +637,6 @@ function onHoleClick(holeIdx, event){
 
   // Record whack
   state.scores[polData.party]++;
-  showHitEffect(polData.name);
   state.totalWhacks++;
   updateScoreDisplay();
 
@@ -650,17 +648,6 @@ function onHoleClick(holeIdx, event){
 
   // Dismiss
   dismissPolitician(holeIdx, true);
-}
-
-function showHitEffect(name){
-  // Brief visual confirmation — shows politician name briefly
-  var el = document.getElementById('hitEffect');
-  if(!el) return;
-  el.textContent = '✖ ' + name;
-  el.style.opacity = '1';
-  el.style.display = 'block';
-  clearTimeout(el._hideTimer);
-  el._hideTimer = setTimeout(function(){ el.style.opacity = '0'; }, 600);
 }
 
 function showWhackFlash(el, party){
@@ -1227,7 +1214,7 @@ let playerParty = null;
 document.querySelectorAll('.quiz-btn').forEach(btn => {
   btn.addEventListener('click', function(){
     const party = this.dataset.party;
-    playerParty = party;
+    window.playerParty = playerParty = party;
     // Button press feedback
     this.style.transform = 'scale(0.92)';
     setTimeout(() => {
@@ -1266,6 +1253,10 @@ if('serviceWorker' in navigator){
   // Lightweight PWA registration — will work once service worker is deployed
   // For now, just the manifest is enough for "add to home screen"
 }
+
+// Export state for leaderboard code
+window.state = state;
+window.playerParty = playerParty;
 
 console.log('🎯 Whack-a-Pol loaded. Ready to play!');
 console.log('👥 42 Politicians ready');
