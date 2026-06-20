@@ -594,7 +594,19 @@ function dismissPolitician(holeIdx, wasWhacked){
 }
 
 // ===== CLICK / TAP HANDLING =====
-function onHoleClick(holeIdx, event){ _dc.clicks++; try{var de=document.getElementById("d_clicks");if(de)de.textContent=_dc.clicks}catch(e){}
+function onHoleClick(holeIdx, event){
+  // Check state.playing
+  if(window._dc){
+    _dc.clicks++;
+    var de=document.getElementById('d_clicks');
+    if(de) de.textContent=_dc.clicks;
+  }
+  var sp = typeof state !== 'undefined' ? state.playing : 'NO STATE';
+  var se = document.getElementById('d_state');
+  if(se) se.textContent = sp === true ? 'running' : (sp === false ? 'ended' : String(sp));
+  
+  // Prevent double-fire check  
+  const hole = holes[holeIdx]; try{var de=document.getElementById("d_clicks");if(de)de.textContent=_dc.clicks}catch(e){}
   // Prevent double-fire: if this hole was just touch-whacked, skip click
   const hole = holes[holeIdx];
   if(hole && hole.dataset.touchWhacked){
@@ -614,6 +626,9 @@ function onHoleClick(holeIdx, event){ _dc.clicks++; try{var de=document.getEleme
   if(polIdx === -1 || polIdx === undefined || !polEl.classList.contains('active')){
     playSound('miss');
     showTapRipple(event);
+    // Show state info on miss
+    var sdiv = document.getElementById('d_state');
+    if(sdiv) sdiv.textContent = 'miss - playing=' + state.playing + ' holes=' + (state.activeHoles?state.activeHoles.length:0);
     // On-screen MISS indicator
     var mdiv = document.getElementById('debugMsg');
     if(mdiv){
