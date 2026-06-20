@@ -506,7 +506,7 @@ function layoutHoles(){
       // Whack immediately on touch (no 300ms click delay on iOS)
       e.preventDefault();
       onHoleClick(i, e);
-      holes[i].dataset.touchWhacked = Date.now();
+      holes[i].el.dataset.touchWhacked = Date.now();
     }, {passive: false});
     field.appendChild(hole);
     holes.push({el:hole, politician:pol, flash, idx:i});
@@ -642,12 +642,12 @@ function onHoleClick(holeIdx, event){
   const hole = holes[holeIdx];
   try{var de=document.getElementById("d_clicks");if(de)de.textContent=_dc.clicks}catch(e){}
   // Prevent double-fire: if this hole was just touch-whacked, skip click
-  if(hole && hole.dataset.touchWhacked){
+  if(hole && hole.el && hole.el.dataset.touchWhacked){
     const now = Date.now();
-    if(now - parseInt(hole.dataset.touchWhacked) < 500){
+    if(now - parseInt(hole.el.dataset.touchWhacked) < 500){
       return; // Already whacked via touch
     }
-    delete hole.dataset.touchWhacked;
+    delete hole.el.dataset.touchWhacked;
   }
 
   if(!state.playing) return;
