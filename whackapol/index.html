@@ -614,6 +614,16 @@ function onHoleClick(holeIdx, event){ _dc.clicks++; try{var de=document.getEleme
   if(polIdx === -1 || polIdx === undefined || !polEl.classList.contains('active')){
     playSound('miss');
     showTapRipple(event);
+    // On-screen MISS indicator
+    var mdiv = document.getElementById('debugMsg');
+    if(mdiv){
+      var status = polIdx === -1 ? 'polIdx=-1' : polIdx === undefined ? 'polIdx=undef' : '!active';
+      var aHoles = state.activeHoles ? state.activeHoles.length : 0;
+      mdiv.textContent = 'MISS (' + status + ') holes=' + aHoles + ' t=' + state.timeLeft;
+      mdiv.style.color = '#f44';
+      mdiv.style.display = 'block';
+      setTimeout(function(){ mdiv.style.display = 'none'; }, 800);
+    }
     return;
   }
 
@@ -623,6 +633,13 @@ function onHoleClick(holeIdx, event){ _dc.clicks++; try{var de=document.getEleme
 
   // Record whack
   state.scores[polData.party]++;
+  var hdiv = document.getElementById('debugMsg');
+  if(hdiv){
+    hdiv.textContent = 'HIT! ' + polData.name + ' (' + polData.party + ')';
+    hdiv.style.color = '#0f0';
+    hdiv.style.display = 'block';
+    setTimeout(function(){ hdiv.style.display = 'none'; }, 800);
+  }
   state.totalWhacks++;
   updateScoreDisplay();
 
@@ -1375,6 +1392,7 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
   }
 })();
 </script>
+<div id="debugMsg" style="position:fixed;top:55%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:24px;font-weight:bold;z-index:99999;padding:20px 40px;border-radius:16px;display:none;text-align:center;pointer-events:none;border:3px solid #0f0"></div>
 <div id="debugPanel" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);color:#0f0;font-family:monospace;font-size:14px;z-index:9999;padding:20px 30px;border-radius:12px;border:2px solid #0f0;display:none;text-align:center;pointer-events:none;line-height:1.8">
   <div style="font-size:18px;font-weight:bold;margin-bottom:8px">🔍 DIAGNOSTIC</div>
   <div>State: <span id="d_state">not started</span></div>
