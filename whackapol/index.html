@@ -811,7 +811,7 @@ function startGame(){
     state.timeLeft--;
     updateTimer();
     if(state.timeLeft <= 0){
-      endGame();
+      showEndScreen();
     }
   }, 1000);
 
@@ -983,6 +983,9 @@ function pickOne(arr){
   return arr[Math.floor(Math.random() * arr.length)];
 }
 function showEndScreen(){
+  state.playing = false;
+  clearInterval(state.timerId);
+  clearInterval(state.spawnTimerId);
   gameScreen.classList.remove('active');
   quizScreen.classList.remove('active');
   endScreen.classList.add('active');
