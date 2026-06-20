@@ -286,12 +286,12 @@ body{
 </div>
 
   <!-- Decorative mascots -->
-  <div style="position:fixed;left:25%;top:45%;transform:translateY(-50%);font-size:9rem;opacity:0.12;pointer-events:none;user-select:none;z-index:0">🐴</div>
-  <div style="position:fixed;right:25%;top:45%;transform:translateY(-50%);font-size:10rem;opacity:0.12;pointer-events:none;user-select:none;z-index:0">🐘</div>
+  <div style="position:fixed;left:25%;top:45%;transform:translateY(-50%);font-size:9rem;opacity:0.28;pointer-events:none;user-select:none;z-index:0">🐴</div>
+  <div style="position:fixed;right:25%;top:45%;transform:translateY(-50%);font-size:10rem;opacity:0.28;pointer-events:none;user-select:none;z-index:0">🐘</div>
 <!-- ===== GAME SCREEN ===== -->
 <div id="gameScreen" class="screen">
   <div class="game-header">
-    <div class="score-group" style="display:none">
+    <div class="score-group">
       <div class="score-badge" style="color:#ff6666">🔴 <span class="num" id="scoreR">0</span></div>
       <div class="score-badge" style="color:#66bbff">🔵 <span class="num" id="scoreD">0</span></div>
       <div class="score-badge" style="color:#cc88ff">🟣 <span class="num" id="scoreI">0</span></div>
@@ -490,9 +490,9 @@ function layoutHoles(){
     hole.addEventListener('click', e => onHoleClick(i, e));
     hole.addEventListener('touchstart', e => {
       // Whack immediately on touch (no 300ms click delay on iOS)
-      holes[i].dataset.touchWhacked = Date.now();
       e.preventDefault();
       onHoleClick(i, e);
+      holes[i].dataset.touchWhacked = Date.now();
     }, {passive: false});
     field.appendChild(hole);
     holes.push({el:hole, politician:pol, flash, idx:i});
@@ -810,6 +810,7 @@ function startGame(){
   state.timerId = setInterval(() => {
     state.timeLeft--;
     updateTimer();
+    if(state.timeLeft <= 10 && state.timeLeft > 0) playSound('tick');
     if(state.timeLeft <= 0){
       showEndScreen();
     }
