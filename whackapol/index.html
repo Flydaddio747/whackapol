@@ -609,6 +609,26 @@ function dismissPolitician(holeIdx, wasWhacked){
 
 // ===== CLICK / TAP HANDLING =====
 function onHoleClick(holeIdx, event){
+  // ===== DIAGNOSTIC: ALWAYS SHOW CLICK INFO =====
+  var _dm = document.getElementById('debugMsg');
+  if(_dm){
+    try {
+      var _h = holes && holes[holeIdx] ? 'Y' : ('N:holes=' + (holes ? holes.length : 'null'));
+      var _p = '?';
+      var _c = '?';
+      var _tw = '?';
+      if(holes && holes[holeIdx]){
+        _p = holes[holeIdx].politician ? parseInt(holes[holeIdx].politician.dataset.polIndex) : 'noPol';
+        _c = holes[holeIdx].politician ? holes[holeIdx].politician.className : 'noPol';
+        _tw = holes[holeIdx].dataset ? (holes[holeIdx].dataset.touchWhacked || 'undef') : 'noDs';
+      }
+      _dm.textContent = 'CLICK h=' + holeIdx + ' hole=' + _h + ' polIdx=' + _p + ' cls="' + _c + '" tw=' + _tw + ' ap=' + (state.activeHoles ? state.activeHoles.length : '?');
+      _dm.style.color = '#ff0';
+      _dm.style.display = 'block';
+    } catch(e){ _dm.textContent = 'ERR: ' + e.message; _dm.style.display = 'block'; }
+  }
+  // ===== END DIAGNOSTIC =====
+
   // Check state.playing
   if(window._dc){
     _dc.clicks++;
