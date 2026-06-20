@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#0a0a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WC26 Predictor">
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;World Cup 2026 Predictor&quot;,&quot;short_name&quot;:&quot;WC26&quot;,&quot;start_url&quot;:&quot;./index.html&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#0a0a1a&quot;,&quot;theme_color&quot;:&quot;#0a0a1a&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Ccircle cx='96' cy='96' r='92' fill='%230a0a1a' stroke='%23ffd700' stroke-width='4'/%3E%3Cpath d='M96 20 C52 46 36 96 52 142 C70 148 116 148 140 142 C156 96 140 46 96 20Z' fill='none' stroke='%23ffd700' stroke-width='5'/%3E%3Cpath d='M96 20 C76 52 76 140 96 172' fill='none' stroke='%23ffd700' stroke-width='4'/%3E%3Cpath d='M52 142 C72 128 130 128 140 142' fill='none' stroke='%23ffd700' stroke-width='3'/%3E%3Ctext x='96' y='118' text-anchor='middle' fill='%23ffd700' font-size='24' font-weight='bold'%3E26%3C/text%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+<title>World Cup 2026 Predictor</title>
+<style>
+/* ===== WHACK-A-POL VISUAL FAMILY ===== */
+:root {
+  --bg: #0a0a1a;
+  --bg2: #0f0f25;
+  --bg3: #161630;
+  --gold: #ffd700;
+  --gold-dim: #b8960f;
+  --neon: #33ff66;
+  --hot: #ff3366;
+  --purp: #9333ff;
+  --blue: #33ccff;
+  --card: rgba(255,255,255,0.03);
+  --card-hover: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.07);
+  --border-active: rgba(255,215,0,0.3);
+  --text: #d0d0f0;
+  --text-muted: #6666aa;
+  --text-dim: #444477;
+  --danger: #ff3366;
+  --success: #33ff66;
+  --warn: #ffaa00;
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  background-image:radial-gradient(ellipse at 20% 30%, rgba(147,51,255,0.04) 0%, transparent 60%),
+                   radial-gradient(ellipse at 80% 70%, rgba(51,204,255,0.03) 0%, transparent 60%);
+}
+body::before{
+  content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 4px,rgba(255,255,255,0.008) 4px,rgba(255,255,255,0.008) 5px);
+  pointer-events:none;z-index:0;
+}
+.container{max-width:960px;margin:0 auto;padding:10px;position:relative;z-index:1}
+
+/* ===== HEADER ===== */
+.header{
+  text-align:center;padding:18px 10px 10px;
+  background:linear-gradient(180deg,rgba(0,0,0,0.6) 0%,transparent 100%);
+  margin:-10px -10px 10px;position:relative;
+}
+.header::after{
+  content:'';position:absolute;bottom:0;left:10%;right:10%;
+  height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);
+}
+.header h1{
+  font-size:1.7rem;font-weight:900;letter-spacing:1px;
+  background:linear-gradient(135deg,var(--gold),#fff8dc,var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.header .tagline{
+  font-size:0.75rem;color:var(--text-muted);margin-top:2px;
+  font-style:italic;
+}
+.header .subtitle{
+  font-size:0.7rem;color:var(--text-dim);margin-top:4px;
+  display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;
+}
+.live-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  background:rgba(255,51,102,0.2);color:var(--hot);
+  font-size:0.55rem;font-weight:800;padding:2px 8px;border-radius:20px;
+  border:1px solid rgba(255,51,102,0.3);
+  text-transform:uppercase;letter-spacing:0.5px;
+}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--hot);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+
+/* ===== NAV ===== */
+.nav{
+  display:flex;gap:3px;margin-bottom:12px;overflow-x:auto;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  padding:2px;background:var(--bg2);border-radius:var(--radius);
+  border:1px solid var(--border);
+}
+.nav::-webkit-scrollbar{display:none}
+.nav button{
+  flex-shrink:0;padding:7px 12px;border:none;
+  background:transparent;color:var(--text-muted);border-radius:var(--radius-sm);
+  font-size:0.7rem;font-weight:700;cursor:pointer;
+  transition:all 0.2s;white-space:nowrap;
+  position:relative;
+}
+.nav button:active{transform:scale(0.96)}
+.nav button.active{
+  background:linear-gradient(135deg,rgba(147,51,255,0.2),rgba(51,204,255,0.1));
+  color:var(--text);box-shadow:0 0 20px rgba(147,51,255,0.1);
+}
+.nav button.active::after{
+  content:'';position:absolute;bottom:2px;left:30%;right:30%;
+  height:2px;background:linear-gradient(90deg,var(--purp),var(--blue));
+  border-radius:1px;
+}
+
+/* ===== PANELS ===== */
+.panel{display:none;animation:panelIn 0.25s ease}
+.panel.active{display:block}
+@keyframes panelIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== GROUP CARDS ===== */
+.group-row{display:flex;flex-direction:column;gap:10px}
+.group-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  transition:border-color 0.2s;
+}
+.group-card:active{border-color:var(--border-active)}
+.group-card h3{
+  padding:10px 12px;font-size:0.8rem;font-weight:700;
+  background:rgba(0,0,0,0.3);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.group-card h3 .g-name{
+  background:linear-gradient(135deg,var(--gold),var(--purp));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.group-card h3 .g-snark{font-size:0.55rem;font-weight:400;color:var(--text-dim);max-width:180px;text-align:right;line-height:1.3}
+.standings-table{width:100%;border-collapse:collapse;font-size:0.73rem}
+.standings-table th{
+  padding:5px 4px;text-align:left;font-weight:600;
+  color:var(--text-dim);font-size:0.6rem;
+  border-bottom:1px solid var(--border);
+  text-transform:uppercase;letter-spacing:0.3px;
+}
+.standings-table th:not(:first-child){text-align:center;width:28px}
+.standings-table td{padding:5px 4px;border-bottom:1px solid rgba(255,255,255,0.03)}
+.standings-table td:not(:first-child){text-align:center}
+.standings-table .team-name{
+  display:flex;align-items:center;gap:5px;
+}
+.standings-table .flag{font-size:1rem;line-height:1}
+.standings-table .pos{font-weight:700;width:16px;color:var(--text-dim);font-size:0.65rem}
+.standings-table .top-1 .pos{color:var(--gold)}
+.standings-table .top-2 .pos{color:var(--blue)}
+.standings-table .bottom-2{opacity:0.6}
+
+/* Advance probability */
+.prob-wrap{display:flex;align-items:center;gap:4px}
+.prob-bar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,0.06)}
+.prob-fill{height:100%;border-radius:2px;transition:width 0.6s cubic-bezier(0.34,1.56,0.64,1)}
+.prob-high .prob-fill{background:linear-gradient(90deg,var(--success),#00cc44)}
+.prob-med .prob-fill{background:linear-gradient(90deg,var(--warn),var(--gold))}
+.prob-low .prob-fill{background:linear-gradient(90deg,var(--hot),var(--danger))}
+
+/* ===== MATCH CARDS ===== */
+.match-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px;margin-bottom:8px;
+  transition:all 0.2s;
+}
+.match-card:active{border-color:var(--border-active)}
+.match-card .match-meta{
+  font-size:0.6rem;color:var(--text-dim);margin-bottom:6px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.match-card .match-story{
+  font-size:0.65rem;color:var(--text-muted);font-style:italic;
+  margin-bottom:8px;padding:4px 8px;
+  background:rgba(255,255,255,0.02);border-radius:6px;
+  border-left:2px solid rgba(147,51,255,0.3);
+}
+.match-teams{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:4px;
+  align-items:center;margin-bottom:8px;
+}
+.match-team{
+  text-align:center;font-size:0.8rem;font-weight:600;
+  padding:8px 4px;border-radius:var(--radius-sm);
+  border:2px solid transparent;cursor:pointer;
+  transition:all 0.2s;background:rgba(255,255,255,0.03);
+}
+.match-team:active{transform:scale(0.97)}
+.match-team:hover{background:var(--card-hover)}
+.match-team.selected{
+  border-color:var(--gold);
+  background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,255,0.05));
+  box-shadow:0 0 20px rgba(255,215,0,0.05);
+}
+.match-team .flag{font-size:1.3rem;display:block}
+.match-team .team-label{display:block;margin-top:2px}
+.match-team .team-record{font-size:0.55rem;font-weight:400;color:var(--text-dim);display:block;margin-top:1px}
+.match-vs{
+  font-size:0.6rem;font-weight:800;color:var(--text-dim);
+  text-align:center;letter-spacing:1px;
+}
+.match-prediction{
+  margin-top:6px;padding:8px;border-radius:var(--radius-sm);
+  font-size:0.68rem;text-align:center;
+  background:rgba(255,255,255,0.02);
+}
+.conf-bar{height:4px;border-radius:2px;background:rgba(255,255,255,0.05);margin-top:3px;overflow:hidden}
+.conf-fill{height:100%;border-radius:2px;transition:width 0.5s cubic-bezier(0.34,1.56,0.64,1)}
+.conf-high .conf-fill{background:linear-gradient(90deg,var(--success),#00cc44)}
+.conf-med .conf-fill{background:linear-gradient(90deg,var(--warn),var(--gold))}
+.conf-low .conf-fill{background:linear-gradient(90deg,var(--hot),#cc0044)}
+.match-prediction .roast{
+  display:block;margin-top:4px;font-size:0.6rem;
+  color:var(--hot);font-style:italic;animation:roastIn 0.3s ease;
+}
+@keyframes roastIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.match-prediction .celebration{
+  display:block;margin-top:4px;font-size:0.6rem;
+  color:var(--success);animation:celebrateIn 0.4s ease;
+}
+@keyframes celebrateIn{0%{opacity:0;transform:scale(0.5)}50%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+
+/* ===== BRACKET ===== */
+.bracket-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
+.bracket{display:flex;gap:0;min-width:740px}
+.round-col{flex:1;display:flex;flex-direction:column;gap:0;min-width:105px}
+.round-header{
+  text-align:center;font-size:0.55rem;font-weight:800;padding:5px;
+  background:linear-gradient(135deg,rgba(147,51,255,0.15),rgba(51,204,255,0.05));
+  border-radius:6px;margin-bottom:3px;
+  text-transform:uppercase;letter-spacing:0.5px;
+  color:var(--text);
+  border:1px solid rgba(255,255,255,0.05);
+}
+.bracket-match{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:6px;padding:3px 5px;margin:1.5px 2px;
+  font-size:0.6rem;transition:border-color 0.2s;
+}
+.bracket-team{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:2px 0;
+}
+.bracket-team .b-flag{font-size:0.7rem;margin-right:2px}
+.bracket-team .b-name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px}
+.bracket-team.winner .b-name{font-weight:800;color:var(--gold)}
+.bracket-divider{height:2px}
+.bracket-team .b-seed{font-size:0.5rem;color:var(--text-dim);margin-right:2px}
+.bracket-empty{color:var(--text-dim);font-style:italic;font-size:0.55rem}
+
+/* ===== TRIVIA ===== */
+.trivia-card{
+  background:linear-gradient(135deg,rgba(147,51,255,0.04),rgba(51,204,255,0.02));
+  border:1px solid rgba(147,51,255,0.1);
+  border-radius:var(--radius);padding:14px;margin-bottom:10px;
+  position:relative;overflow:hidden;cursor:pointer;
+  transition:border-color 0.2s;
+}
+.trivia-card:active{border-color:rgba(147,51,255,0.3)}
+.trivia-card::before{
+  content:'⚽';position:absolute;top:-3px;right:-3px;
+  font-size:2.5rem;opacity:0.05;
+}
+.trivia-card .trivia-num{
+  font-size:0.55rem;font-weight:700;
+  color:var(--purp);text-transform:uppercase;
+  letter-spacing:0.5px;margin-bottom:6px;
+}
+.trivia-card .trivia-q{
+  font-size:0.85rem;line-height:1.5;
+  color:var(--text);font-weight:500;
+}
+.trivia-card .trivia-hint{
+  font-size:0.65rem;color:var(--text-muted);margin-top:6px;
+  font-style:italic;
+}
+.trivia-card .trivia-a{
+  margin-top:8px;padding:8px 10px;border-radius:var(--radius-sm);
+  background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,255,0.04));
+  color:var(--gold);font-weight:600;font-size:0.75rem;
+  display:none;animation:revealIn 0.4s ease;
+}
+.trivia-card.revealed .trivia-a{display:block}
+.trivia-card .tap-reveal{
+  font-size:0.6rem;color:var(--text-dim);
+  margin-top:6px;font-style:italic;
+}
+@keyframes revealIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== ABOUT ===== */
+.about-section{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;font-size:0.75rem;line-height:1.6;
+}
+.about-section h3{color:var(--gold);margin:14px 0 6px;font-size:0.85rem}
+.about-section h3:first-child{margin-top:0}
+.about-section .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.about-section .grid-2 span:nth-child(even){color:var(--text-muted)}
+
+/* ===== CONFETTI ===== */
+.confetti-container{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  pointer-events:none;z-index:999;overflow:hidden;
+}
+.confetti-piece{
+  position:absolute;width:6px;height:6px;top:-10px;
+  animation:confettiFall linear forwards;
+}
+@keyframes confettiFall{
+  0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}
+  100%{transform:translateY(100vh) rotate(720deg) scale(0.5);opacity:0}
+}
+
+/* ===== SNARK BANNER ===== */
+.snark-banner{
+  background:linear-gradient(135deg,rgba(147,51,255,0.08),rgba(51,204,255,0.04));
+  border:1px solid rgba(147,51,255,0.12);
+  border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+  font-size:0.68rem;
+}
+.snark-banner .snark-icon{font-size:1.2rem}
+
+/* ===== HOT TAKE METER ===== */
+.hot-meter{
+  display:flex;align-items:center;gap:4px;justify-content:center;
+  margin-top:4px;
+}
+.hot-meter .flame{font-size:0.7rem;transition:all 0.3s}
+.hot-meter .flame.lit{animation:flameFlicker 0.5s ease infinite}
+@keyframes flameFlicker{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+
+/* ===== RESPONSIVE ===== */
+@media(min-width:640px){
+  .container{padding:16px}
+  .header h1{font-size:2.2rem}
+  .group-row{flex-direction:row;flex-wrap:wrap}
+  .group-card{flex:1 1 calc(50% - 8px);min-width:280px}
+  .bracket{min-width:820px}
+  .match-team{padding:10px 8px}
+}
+@media(min-width:900px){
+  .group-card{flex:1 1 calc(33.33% - 10px)}
+}
+@media(max-width:480px){
+  .standings-table{font-size:0.65rem}
+  .standings-table th,.standings-table td{padding:4px 3px}
+  .match-card{padding:10px}
+  .header h1{font-size:1.4rem}
+  .nav button{padding:6px 10px;font-size:0.65rem}
+}
+
+/* UTILITY */
+.text-muted{color:var(--text-muted)}
+.text-dim{color:var(--text-dim)}
+.text-gold{color:var(--gold)}
+.text-hot{color:var(--hot)}
+.text-neon{color:var(--neon)}
+.text-sm{font-size:0.65rem}
+.text-xs{font-size:0.55rem}
+.mt-4{margin-top:4px}
+.mt-6{margin-top:6px}
+.mt-8{margin-top:8px}
+.mb-8{margin-bottom:8px}
+.text-center{text-align:center}
+.flex-center{display:flex;align-items:center;justify-content:center;gap:6px}
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <div class="header">
+    <h1>⚽ WORLD CUP 2026</h1>
+    <div class="tagline">"48 teams. 12 groups. Zero chill."</div>
+    <div class="subtitle">
+      <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+      <span>Group Stage · Match Day 2</span>
+      <span>·</span>
+      <span>🇺🇸🇨🇦🇲🇽</span>
+    </div>
+  </div>
+
+  <div class="nav" id="mainNav">
+    <button class="active" data-tab="groups">📊 Groups</button>
+    <button data-tab="predictor">🔮 Predict</button>
+    <button data-tab="bracket">🏆 Bracket</button>
+    <button data-tab="trivia">🧠 Trivia</button>
+    <button data-tab="about">ℹ️ About</button>
+  </div>
+
+  <!-- PANEL: GROUPS -->
+  <div class="panel active" id="panelGroups">
+    <div class="snark-banner">
+      <span class="snark-icon">📊</span>
+      <span>Group standings after Match Day 2. Some groups are decided. Some are dumpster fires. Let's see who's cooking and who's cooked.</span>
+    </div>
+    <div class="group-row" id="groupsContainer"></div>
+  </div>
+
+  <!-- PANEL: PREDICTOR -->
+  <div class="panel" id="panelPredictor">
+    <div class="snark-banner">
+      <span class="snark-icon">🔮</span>
+      <span>Tap a team to predict the winner. Your picks are saved locally. Confidence is powered by group performance + your gut. Good luck. You'll need it.</span>
+    </div>
+    <div id="predictionsContainer"></div>
+  </div>
+
+  <!-- PANEL: BRACKET -->
+  <div class="panel" id="panelBracket">
+    <div class="snark-banner">
+      <span class="snark-icon">🏆</span>
+      <span>The 48-team monster bracket. 32 advance. The rest go home wondering what could've been. Known qualifiers auto-populated.</span>
+    </div>
+    <div class="bracket-wrapper">
+      <div class="bracket" id="bracketContainer"></div>
+    </div>
+  </div>
+
+  <!-- PANEL: TRIVIA -->
+  <div class="panel" id="panelTrivia">
+    <div class="snark-banner">
+      <span class="snark-icon">🧠</span>
+      <span>World Cup trivia with attitude. Tap a card to reveal the answer. No judgment if you get them wrong. (OK, maybe a little.)</span>
+    </div>
+    <div id="triviaContainer"></div>
+  </div>
+
+  <!-- PANEL: ABOUT -->
+  <div class="panel" id="panelAbout">
+    <div class="about-section">
+      <h3>🌍 World Cup 2026 — The Big One</h3>
+      <p>48 teams. 104 matches. 3 host nations. One trophy. The first-ever 48-team FIFA World Cup is here, and we're tracking every group, every match, and every knockout bracket slot. Predict winners, watch your confidence rating fluctuate, and pretend you know what you're talking about.</p>
+
+      <h3>📅 Key Dates</h3>
+      <div class="grid-2 text-sm">
+        <span>Group Stage</span><span>June 11–27</span>
+        <span>Round of 32</span><span>June 28 – July 3</span>
+        <span>Round of 16</span><span>July 4–7</span>
+        <span>Quarterfinals</span><span>July 9–11</span>
+        <span>Semifinals</span><span>July 14–15</span>
+        <span>Final</span><span>July 19 · MetLife Stadium</span>
+      </div>
+
+      <h3>🏟️ 16 Host Venues</h3>
+      <p class="text-sm">Estadio Azteca (Mexico City), MetLife Stadium (NY/NJ), AT&T Stadium (Dallas), SoFi Stadium (LA), Arrowhead Stadium (KC), Levi's Stadium (SF Bay), NRG Stadium (Houston), Lincoln Financial Field (Philly), Mercedes-Benz Stadium (Atlanta), Lumen Field (Seattle), Hard Rock Stadium (Miami), Gillette Stadium (Boston), BC Place (Vancouver), Estadio BBVA (Monterrey), Estadio Akron (Guadalajara), BMO Field (Toronto).</p>
+
+      <h3>📊 Data Sources</h3>
+      <p class="text-sm">Group standings from Al Jazeera & NBC Sports. Match schedule from official FIFA channels. All data as of June 20, 2026 (Match Day 2). Your prediction picks live in your browser's localStorage.</p>
+
+      <h3>📱 PWA</h3>
+      <p class="text-sm">Add this to your home screen. Works offline. Looks great. No subscription fee. You're welcome.</p>
+
+      <div class="text-center mt-8 text-dim text-sm">Built by Happy · 2026 · Part of the Whack-A-Pol family</div>
+    </div>
+  </div>
+</div>
+
+<!-- Confetti container -->
+<div class="confetti-container" id="confettiContainer"></div>
+
+<script>
+// ====== DATA ======
+
+// Snarky match storylines
+const MATCH_STORIES = {
+  g1:"Korea vs Czechia — the pilsner vs kimchi bowl. Both still alive. Neither confident.",
+  g2:"Mexico need to bounce back after that loss. South Africa is just happy to be here.",
+  g3:"Canada is riding high after dismantling Qatar. The hosts are feeling themselves.",
+  g4:"Switzerland — perpetually underestimated. Bosnia? They're just happy it's not a playoff.",
+  g5:"Brazil vs Haiti. The talent gap is real. Haiti needs a miracle. Brazilians need to show up.",
+  g6:"Scotland surprised everyone by beating Brazil. Morocco is licking their wounds. Something's gotta give.",
+  g7:"USA vs Paraguay — the 'who blinked first' derby. USA is flying, Paraguay is desperate.",
+  g8:"Australia vs Turkiye — two teams with opposite vibes. The Socceroos have momentum. Turkiye needs a win. Badly.",
+  g9:"Germany vs Ecuador — the efficiency machine vs the wild card. Ecuador has the talent but Germany has the system.",
+  g10:"Ivory Coast vs Curaçao — the debutants vs the African power. Curaçao is living the dream. Ivorians are not messing around.",
+  g11:"Sweden vs Tunisia — Viking efficiency vs North African flair. Sweden looks terrifying.",
+  g12:"Japan vs Netherlands — tactical chess match. Japan is disciplined. Dutch need a result.",
+  g13:"New Zealand vs Belgium — the All Whites vs the Red Devils. Belgium is grumpy after that draw.",
+  g14:"Iran vs Egypt — Middle East derby. Neither can afford to lose. Both need points. Drama incoming.",
+  g15:"Uruguay vs Spain — two heavyweights slugging it out. This is the match of the round.",
+  g16:"Saudi Arabia vs Cape Verde — the debutants vs the Asian power. Cape Verde is living their best life.",
+  g17:"Norway vs Iraq — Haaland & co vs the Lions of Mesopotamia. Uneven matchup on paper. Paper doesn't always win.",
+  g18:"France vs Senegal — 2022 finalists vs African champions. France is mad after the Norway loss. Senegal is dangerous.",
+  g19:"Argentina vs Jordan — the GOAT vs the debutants. Messi is inevitable. Jordan is unbothered.",
+  g20:"Austria vs Algeria — European efficiency meets Desert Fox cunning. Both need this win.",
+  g21:"Colombia vs Uzbekistan — the dance-off. Colombia has swagger. Uzbekistan has... also swagger?",
+  g22:"DR Congo vs Portugal — giant killers vs European royalty. Ronaldo watch: activated.",
+  g23:"England vs Croatia — revenge of the 2018 semi. England is fine. Croatia is aging. Still spicy.",
+  g24:"Ghana vs Panama — Black Stars vs Los Canaleros. Both need a result. CONCACAF vs Africa. Place your bets."
+};
+
+const TRIVIA = [
+  {q:"Which country has won the most World Cups?",a:"Brazil — 5 titles (1958, 1962, 1970, 1994, 2002). Five stars on the jersey. Zero debate.",h:"Think yellow, think samba, think 'they're really good at this'"},
+  {q:"Who is the all-time leading goalscorer in World Cup history (men's)?",a:"Miroslav Klose (Germany) — 16 goals across 4 tournaments (2002–2014). A humble legend who let his feet do the talking.",h:"🇩🇪 German efficiency. Not a flashy superstar."},
+  {q:"What is the fastest goal ever scored in a World Cup match?",a:"Hakan Şükür (Turkey) — 11 SECONDS vs South Korea in 2002. Faster than your morning coffee.",h:"🏃 If you blinked, you missed it."},
+  {q:"Which country has appeared in the most World Cups without EVER winning?",a:"Netherlands — 11 appearances, 3 finals (1974, 1978, 2010), 0 titles. The ultimate bridesmaid. 😢",h:"Oranje heartbreak. So close, so many times."},
+  {q:"Who scored the first goal of the 2026 World Cup?",a:"Julián Quiñones (Mexico) — 9th minute vs South Africa at Estadio Azteca. History made. Azteca erupted.",h:"🇲🇽 Mexico started the party early."},
+  {q:"Which four teams are making their World Cup DEBUT in 2026?",a:"Cape Verde, Curaçao, Jordan, and Uzbekistan. Welcome to the big stage, rookies.",h:"🌍 Two from Africa, one from Asia, one Caribbean island."},
+  {q:"What's the new format for the 2026 World Cup?",a:"48 teams in 12 groups of 4. Top 2 in each group + 8 best 3rd-place teams advance. Round of 32 is the new Round of 16. First expansion since 1998.",h:"🔄 Math: 48 → 32 → 16 → 8 → 4 → 1"},
+  {q:"Which stadium is hosting the 2026 World Cup Final?",a:"MetLife Stadium in East Rutherford, New Jersey (NY/NJ area). The biggest game, 15 minutes from Manhattan.",h:"🗽 Just across the Hudson from the Statue of Liberty."},
+  {q:"Which player has scored in FIVE different World Cups?",a:"Lionel Messi (Argentina) — 2006, 2010, 2014, 2018, 2022. And he's still going in 2026. The GOAT doesn't stop.",h:"🐐 Actually the greatest."},
+  {q:"What was the highest-scoring World Cup match EVER?",a:"Austria 7–5 Switzerland (1954). TWELVE goals. That's a goal every 7.5 minutes. Defenders were optional.",h:"⚡ 12 goals. 90 minutes. Do the math."},
+  {q:"Who holds the record for most World Cup appearances (tournaments)?",a:"Lionel Messi (Argentina) and Antonio Carbajal (Mexico) — 5 tournaments each. One is a legend. The other is... also a legend.",h:"🇦🇷🇲🇽 One active, one retired. Both icons."},
+  {q:"Which country has hosted the World Cup THREE times (including 2026)?",a:"Mexico — 1970, 1986, and now co-hosting 2026. Nobody knows how to throw a football party like Mexico.",h:"🌮 El Tri's homeland knows the drill."},
+  {q:"What new 2026 rule punishes players for covering their mouth during confrontations?",a:"Mouth-covering = straight red card. FIFA decided if you're hiding what you're saying, you're probably being a jerk. Fair.",h:"🤫 No more hiding behind your hand like a cartoon villain."},
+  {q:"How many total matches will be played at the 2026 World Cup?",a:"104 matches — up from 64. That's almost 40 more games to watch. Your productivity in June/July is officially doomed.",h:"📈 More games = less work. Simple math."},
+  {q:"Which nation is the defending champion in 2026?",a:"Argentina — won their 3rd title in 2022, beating France on penalties in the greatest final ever played. Messi finally got his hands on it.",h:"🇦🇷 La Albiceleste carries the crown."},
+  {q:"Who are the current top scorers of the 2026 World Cup so far?",a:"Lionel Messi (Argentina) and Jonathan David (Canada) — 3 goals each. The GOAT and the rising star, neck and neck.",h:"⚽ An icon and a Canadian hero. Who had that on their bingo card?"},
+  {q:"What's the biggest upset of the 2026 World Cup so far?",a:"Scotland 2–1 Brazil in Group C. The Tartan Army made Brazil look ordinary. Betting markets are still recovering.",h:"🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scotland. Beat. Brazil."},
+  {q:"Which nation holds the record for most consecutive World Cup appearances?",a:"Brazil — they've played in EVERY World Cup (22 tournaments, 1930–2026). Never missed one. Show up much?",h:"🇧🇷 Brazil doesn't do qualifying drama."},
+  {q:"Who was the youngest player to score in a World Cup?",a:"Pelé (Brazil) — 17 years old in the 1958 final. And he scored a hat-trick. Just 17. Let that sink in.",h:"👑 Before he was The King, he was The Teenager."},
+  {q:"What's the furthest a host nation has ever gone in the World Cup?",a:"Winners: Uruguay 1930, Italy 1934, England 1966, Germany 1974, Argentina 1978, France 1998. Will USA, Canada, or Mexico join the list?",h:"🏠 Home field advantage is REAL."}
+];
+
+const GROUPS = [
+  {name:'A',snark:'Mexico leads but South Korea is lurking. South Africa is not quite dead yet.',teams:[
+    {name:'Mexico',flag:'🇲🇽',pts:6,gd:3,gf:5,ga:2,status:'W'},
+    {name:'South Korea',flag:'🇰🇷',pts:3,gd:0,gf:3,ga:3,status:'R'},
+    {name:'Czechia',flag:'🇨🇿',pts:1,gd:-1,gf:2,ga:3,status:''},
+    {name:'South Africa',flag:'🇿🇦',pts:1,gd:-2,gf:1,ga:3,status:''}
+  ]},
+  {name:'B',snark:'Canada is demolishing everything. Switzerland is quietly solid. Qatar is getting Qatar\'d.',teams:[
+    {name:'Canada',flag:'🇨🇦',pts:4,gd:6,gf:8,ga:2,status:'W'},
+    {name:'Switzerland',flag:'🇨🇭',pts:4,gd:3,gf:5,ga:2,status:'R'},
+    {name:'Bosnia & Herz.',flag:'🇧🇦',pts:1,gd:-3,gf:1,ga:4,status:''},
+    {name:'Qatar',flag:'🇶🇦',pts:1,gd:-6,gf:0,ga:6,status:''}
+  ]},
+  {name:'C',snark:'Scotland shocked Brazil. The Tartan Army is still partying. Group of chaos.',teams:[
+    {name:'Scotland',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',pts:3,gd:1,gf:3,ga:2,status:'W'},
+    {name:'Brazil',flag:'🇧🇷',pts:1,gd:0,gf:2,ga:2,status:''},
+    {name:'Morocco',flag:'🇲🇦',pts:1,gd:0,gf:2,ga:2,status:''},
+    {name:'Haiti',flag:'🇭🇹',pts:0,gd:-1,gf:1,ga:2,status:''}
+  ]},
+  {name:'D',snark:'USA is cruising. Australia is scrappy. Turkiye and Paraguay need a miracle. Or three.',teams:[
+    {name:'USA',flag:'🇺🇸',pts:6,gd:5,gf:7,ga:2,status:'W'},
+    {name:'Australia',flag:'🇦🇺',pts:3,gd:0,gf:3,ga:3,status:'R'},
+    {name:'Türkiye',flag:'🇹🇷',pts:0,gd:-1,gf:2,ga:3,status:''},
+    {name:'Paraguay',flag:'🇵🇾',pts:0,gd:-3,gf:1,ga:4,status:''}
+  ]},
+  {name:'E',snark:'Germany is doing Germany things. Ivory Coast is right there. Curaçao is having a bad time.',teams:[
+    {name:'Germany',flag:'🇩🇪',pts:3,gd:6,gf:8,ga:2,status:'W'},
+    {name:'Ivory Coast',flag:'🇨🇮',pts:3,gd:1,gf:3,ga:2,status:'R'},
+    {name:'Ecuador',flag:'🇪🇨',pts:0,gd:-1,gf:2,ga:3,status:''},
+    {name:'Curaçao',flag:'🇨🇼',pts:0,gd:-6,gf:0,ga:6,status:''}
+  ]},
+  {name:'F',snark:'Sweden is terrifying. Japan and Netherlands are locked in a staring contest. Tunisia is... also there.',teams:[
+    {name:'Sweden',flag:'🇸🇪',pts:3,gd:4,gf:5,ga:1,status:'W'},
+    {name:'Japan',flag:'🇯🇵',pts:1,gd:0,gf:2,ga:2,status:''},
+    {name:'Netherlands',flag:'🇳🇱',pts:1,gd:0,gf:2,ga:2,status:''},
+    {name:'Tunisia',flag:'🇹🇳',pts:0,gd:-4,gf:0,ga:4,status:''}
+  ]},
+  {name:'G',snark:'Everybody has 1 point. That\'s not a group. That\'s a four-way staring contest.',teams:[
+    {name:'New Zealand',flag:'🇳🇿',pts:1,gd:0,gf:1,ga:1,status:''},
+    {name:'Iran',flag:'🇮🇷',pts:1,gd:0,gf:1,ga:1,status:''},
+    {name:'Belgium',flag:'🇧🇪',pts:1,gd:0,gf:1,ga:1,status:''},
+    {name:'Egypt',flag:'🇪🇬',pts:1,gd:0,gf:1,ga:1,status:''}
+  ]},
+  {name:'H',snark:'No separation. Everyone is mid. Somebody needs to grow a spine.',teams:[
+    {name:'Uruguay',flag:'🇺🇾',pts:1,gd:0,gf:2,ga:2,status:''},
+    {name:'Saudi Arabia',flag:'🇸🇦',pts:1,gd:0,gf:2,ga:2,status:''},
+    {name:'Spain',flag:'🇪🇸',pts:1,gd:0,gf:2,ga:2,status:''},
+    {name:'Cape Verde',flag:'🇨🇻',pts:1,gd:0,gf:2,ga:2,status:''}
+  ]},
+  {name:'I',snark:'Norway shocked France. Haaland is inevitable. Les Bleus are furious.',teams:[
+    {name:'Norway',flag:'🇳🇴',pts:3,gd:3,gf:4,ga:1,status:'W'},
+    {name:'France',flag:'🇫🇷',pts:3,gd:2,gf:4,ga:2,status:'R'},
+    {name:'Senegal',flag:'🇸🇳',pts:0,gd:-2,gf:1,ga:3,status:''},
+    {name:'Iraq',flag:'🇮🇶',pts:0,gd:-3,gf:1,ga:4,status:''}
+  ]},
+  {name:'J',snark:'Argentina and Austria are running away with it. Jordan and Algeria are playing for pride.',teams:[
+    {name:'Argentina',flag:'🇦🇷',pts:3,gd:3,gf:4,ga:1,status:'W'},
+    {name:'Austria',flag:'🇦🇹',pts:3,gd:2,gf:3,ga:1,status:'R'},
+    {name:'Jordan',flag:'🇯🇴',pts:0,gd:-2,gf:2,ga:4,status:''},
+    {name:'Algeria',flag:'🇩🇿',pts:0,gd:-3,gf:1,ga:4,status:''}
+  ]},
+  {name:'K',snark:'Colombia leads. DR Congo and Portugal are stuck in neutral. Uzbekistan is learning fast.',teams:[
+    {name:'Colombia',flag:'🇨🇴',pts:3,gd:2,gf:3,ga:1,status:'W'},
+    {name:'DR Congo',flag:'🇨🇩',pts:1,gd:0,gf:1,ga:1,status:''},
+    {name:'Portugal',flag:'🇵🇹',pts:1,gd:0,gf:1,ga:1,status:''},
+    {name:'Uzbekistan',flag:'🇺🇿',pts:0,gd:-2,gf:0,ga:2,status:''}
+  ]},
+  {name:'L',snark:'England doing England things (mediocre but winning). Ghana is lurking. Croatia is showing its age.',teams:[
+    {name:'England',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',pts:3,gd:2,gf:3,ga:1,status:'W'},
+    {name:'Ghana',flag:'🇬🇭',pts:3,gd:1,gf:2,ga:1,status:'R'},
+    {name:'Panama',flag:'🇵🇦',pts:0,gd:-1,gf:1,ga:2,status:''},
+    {name:'Croatia',flag:'🇭🇷',pts:0,gd:-2,gf:0,ga:2,status:''}
+  ]}
+];
+
+const UPCOMING_MATCHES = [
+  {id:'g1',group:'A',date:'Jun 20',team1:'South Korea',team2:'Czechia',venue:'Seattle'},
+  {id:'g2',group:'A',date:'Jun 20',team1:'Mexico',team2:'South Africa',venue:'Mexico City'},
+  {id:'g3',group:'B',date:'Jun 21',team1:'Canada',team2:'Qatar',venue:'Vancouver'},
+  {id:'g4',group:'B',date:'Jun 21',team1:'Switzerland',team2:'Bosnia & Herz.',venue:'Guadalajara'},
+  {id:'g5',group:'C',date:'Jun 21',team1:'Brazil',team2:'Haiti',venue:'Miami'},
+  {id:'g6',group:'C',date:'Jun 21',team1:'Scotland',team2:'Morocco',venue:'Houston'},
+  {id:'g7',group:'D',date:'Jun 20',team1:'USA',team2:'Paraguay',venue:'Philadelphia'},
+  {id:'g8',group:'D',date:'Jun 20',team1:'Australia',team2:'Türkiye',venue:'Boston'},
+  {id:'g9',group:'E',date:'Jun 22',team1:'Germany',team2:'Ecuador',venue:'Atlanta'},
+  {id:'g10',group:'E',date:'Jun 22',team1:'Ivory Coast',team2:'Curaçao',venue:'Toronto'},
+  {id:'g11',group:'F',date:'Jun 22',team1:'Sweden',team2:'Tunisia',venue:'Kansas City'},
+  {id:'g12',group:'F',date:'Jun 22',team1:'Japan',team2:'Netherlands',venue:'Dallas'},
+  {id:'g13',group:'G',date:'Jun 23',team1:'New Zealand',team2:'Belgium',venue:'Seattle'},
+  {id:'g14',group:'G',date:'Jun 23',team1:'Iran',team2:'Egypt',venue:'Monterrey'},
+  {id:'g15',group:'H',date:'Jun 23',team1:'Uruguay',team2:'Spain',venue:'LA'},
+  {id:'g16',group:'H',date:'Jun 23',team1:'Saudi Arabia',team2:'Cape Verde',venue:'SF Bay'},
+  {id:'g17',group:'I',date:'Jun 24',team1:'Norway',team2:'Iraq',venue:'Miami'},
+  {id:'g18',group:'I',date:'Jun 24',team1:'France',team2:'Senegal',venue:'Philly'},
+  {id:'g19',group:'J',date:'Jun 24',team1:'Argentina',team2:'Jordan',venue:'Houston'},
+  {id:'g20',group:'J',date:'Jun 24',team1:'Austria',team2:'Algeria',venue:'NY/NJ'},
+  {id:'g21',group:'K',date:'Jun 25',team1:'Colombia',team2:'Uzbekistan',venue:'Atlanta'},
+  {id:'g22',group:'K',date:'Jun 25',team1:'DR Congo',team2:'Portugal',venue:'Toronto'},
+  {id:'g23',group:'L',date:'Jun 25',team1:'England',team2:'Croatia',venue:'Boston'},
+  {id:'g24',group:'L',date:'Jun 25',team1:'Ghana',team2:'Panama',venue:'LA'}
+];
+
+const BRACKET_R32 = [
+  {id:'r32_1',label:'M73',t1:'RU Group A',t2:'RU Group B',date:'Jun 28'},
+  {id:'r32_2',label:'M74',t1:'W Group E',t2:'3rd A/B/C/D/F',date:'Jun 29'},
+  {id:'r32_3',label:'M75',t1:'W Group F',t2:'RU Group C',date:'Jun 29'},
+  {id:'r32_4',label:'M76',t1:'W Group C',t2:'RU Group F',date:'Jun 30'},
+  {id:'r32_5',label:'M77',t1:'W Group I',t2:'3rd C/D/F/G/H',date:'Jun 30'},
+  {id:'r32_6',label:'M78',t1:'RU Group E',t2:'RU Group I',date:'Jul 1'},
+  {id:'r32_7',label:'M79',t1:'W Group A',t2:'3rd C/E/F/H/I',date:'Jul 1'},
+  {id:'r32_8',label:'M80',t1:'W Group L',t2:'3rd E/H/I/J/K',date:'Jul 1'},
+  {id:'r32_9',label:'M81',t1:'W Group D',t2:'3rd B/E/F/I/J',date:'Jul 2'},
+  {id:'r32_10',label:'M82',t1:'W Group G',t2:'3rd A/E/H/I/J',date:'Jul 2'},
+  {id:'r32_11',label:'M83',t1:'RU Group K',t2:'RU Group L',date:'Jul 2'},
+  {id:'r32_12',label:'M84',t1:'W Group H',t2:'RU Group J',date:'Jul 2'},
+  {id:'r32_13',label:'M85',t1:'W Group B',t2:'3rd E/F/G/I/J',date:'Jul 3'},
+  {id:'r32_14',label:'M86',t1:'W Group J',t2:'RU Group H',date:'Jul 3'},
+  {id:'r32_15',label:'M87',t1:'W Group K',t2:'3rd D/E/I/J/L',date:'Jul 3'},
+  {id:'r32_16',label:'M88',t1:'RU Group D',t2:'RU Group G',date:'Jul 3'}
+];
+
+// ====== HELPERS ======
+function getGroup(name){return GROUPS.find(function(g){return g.name===name})}
+
+function getTeamInfo(teamName){
+  for(var gi=0;gi<GROUPS.length;gi++){
+    var g=GROUPS[gi];
+    for(var ti=0;ti<g.teams.length;ti++){
+      if(g.teams[ti].name===teamName) return {team:g.teams[ti],group:g.name};
+    }
+  }
+  return null;
+}
+
+function calcAdvanceProb(team,group){
+  var idx=group.teams.indexOf(team);
+  if(idx===-1) return 0;
+  var maxPts=0;
+  for(var i=0;i<group.teams.length;i++){if(group.teams[i].pts>maxPts)maxPts=group.teams[i].pts}
+  if(idx===0&&team.pts>group.teams[1].pts+3) return 95;
+  if(idx===0) return 85;
+  if(idx===1&&team.pts>=group.teams[2].pts+3) return 80;
+  if(idx===1) return 60;
+  if(idx===2&&team.pts<group.teams[1].pts-3) return 15;
+  if(idx===2) return 25;
+  if(idx===3&&team.pts<group.teams[0].pts-6) return 3;
+  if(idx===3) return 8;
+  return 30;
+}
+
+// ====== APP STATE ======
+var state={
+  predictions:JSON.parse(localStorage.getItem('wc26_predictions')||'{}'),
+  activeTab:'groups'
+};
+
+function savePredictions(){
+  try{localStorage.setItem('wc26_predictions',JSON.stringify(state.predictions))}catch(e){}
+}
+
+// Roast machine
+var ROASTS={
+  underdog:["Bold. Wrong, but bold.","You really picked THEM? Respect for the chaos.","That pick is... a choice.","The underdog special. I respect the hustle.","Oh honey. No.","Some people just want to watch the world burn.","You do you, champ.","That's the kind of pick that gets you laughed out of the pub.","Vibes over logic. I see you.","Every underdog needs at least one person believing in them. Today, that's you."],
+  favorite:["Safe pick. Boring. Correct probably.","Playing it safe. Your mother would approve.","The boring choice. Also the smart one.","Solid. Uninspired. Effective. Like a Toyota Camry.","No risks. No regrets. No glory.","Betting on the favorite? Bold strategy, Cotton."],
+  confident:["SPICY take. I LIKE it.","🔥 HOT TAKE INCOMING 🔥","You're either a genius or about to look silly. No middle ground.","That's a statement pick. Respect."],
+  celebration:["NAILED IT. 🎯","CALLED IT. You're basically a wizard.","THE PROPHET HAS SPOKEN.","Get this person a commentator job.","Are you a witch? Because that prediction was MAGIC."],
+  usa:["USA! USA! USA! 🇺🇸","The only correct choice. Freedom wins.","Stars and Stripes FOREVER.","Riding with the Red, White, and Blue. Patriotic. I respect it.","AMERICA! *eagle screech*"]
+};
+
+function getRoast(teamName,confidence){
+  var isUSA=teamName==='USA';
+  if(isUSA) return ROASTS.usa[Math.floor(Math.random()*ROASTS.usa.length)];
+  if(confidence<30) return ROASTS.underdog[Math.floor(Math.random()*ROASTS.underdog.length)];
+  if(confidence<50) return ROASTS.favorite[Math.floor(Math.random()*ROASTS.favorite.length)];
+  return ROASTS.confident[Math.floor(Math.random()*ROASTS.confident.length)];
+}
+
+// ====== CONFETTI ======
+function fireConfetti(){
+  var container=document.getElementById('confettiContainer');
+  var colors=['#ffd700','#33ff66','#ff3366','#33ccff','#9333ff','#ffaa00'];
+  for(var i=0;i<30;i++){
+    var piece=document.createElement('div');
+    piece.className='confetti-piece';
+    piece.style.left=Math.random()*100+'%';
+    piece.style.background=colors[Math.floor(Math.random()*colors.length)];
+    piece.style.width=(3+Math.random()*5)+'px';
+    piece.style.height=(3+Math.random()*5)+'px';
+    piece.style.borderRadius=Math.random()>0.5?'50%':'1px';
+    piece.style.animationDuration=(1.5+Math.random()*2)+'s';
+    piece.style.animationDelay=Math.random()*0.5+'s';
+    container.appendChild(piece);
+    setTimeout(function(p){if(p&&p.parentNode)p.parentNode.removeChild(p)},4000,piece);
+  }
+}
+
+// ====== RENDER ======
+
+function renderGroups(){
+  var container=document.getElementById('groupsContainer');
+  var html='';
+  for(var gi=0;gi<GROUPS.length;gi++){
+    var g=GROUPS[gi];
+    var sorted=JSON.parse(JSON.stringify(g.teams));
+    sorted.sort(function(a,b){return (b.pts-a.pts)||(b.gd-a.gd)||(b.gf-a.gf)});
+    html+='<div class="group-card">';
+    html+='<h3><span class="g-name">Group '+g.name+'</span><span class="g-snark">'+g.snark+'</span></h3>';
+    html+='<table class="standings-table"><thead><tr>';
+    html+='<th></th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th><th>Adv</th>';
+    html+='</tr></thead><tbody>';
+    for(var ti=0;ti<sorted.length;ti++){
+      var t=sorted[ti];
+      var prob=calcAdvanceProb(t,g);
+      var rowClass='';
+      if(ti===0||ti===1) rowClass='top-'+(ti+1);
+      else rowClass='bottom-2';
+      var probClass=prob>=70?'prob-high':prob>=35?'prob-med':'prob-low';
+      var w=t.status==='W'?2:Math.floor(t.pts/3);
+      var d=t.pts-w*3;
+      var l=2-w-d;
+      html+='<tr class="'+rowClass+'">';
+      html+='<td class="pos">'+(ti+1)+'</td>';
+      html+='<td class="team-name"><span class="flag">'+t.flag+'</span>'+t.name+(t.status==='W'?' 👑':'')+(t.status==='R'?' ⚡':'')+'</td>';
+      html+='<td>2</td><td>'+w+'</td><td>'+d+'</td><td>'+l+'</td>';
+      html+='<td>'+(t.gd>0?'+':'')+t.gd+'</td>';
+      html+='<td><strong>'+t.pts+'</strong></td>';
+      html+='<td><div class="prob-wrap '+probClass+'"><span class="text-xs">'+prob+'%</span><div class="prob-bar"><div class="prob-fill" style="width:'+prob+'%"></div></div></div></td>';
+      html+='</tr>';
+    }
+    html+='</tbody></table></div>';
+  }
+  container.innerHTML=html;
+}
+
+function renderPredictor(){
+  var container=document.getElementById('predictionsContainer');
+  var html='';
+  for(var mi=0;mi<UPCOMING_MATCHES.length;mi++){
+    var m=UPCOMING_MATCHES[mi];
+    var t1Info=getTeamInfo(m.team1);
+    var t2Info=getTeamInfo(m.team2);
+    var t1Pts=t1Info?t1Info.team.pts:0;
+    var t2Pts=t2Info?t2Info.team.pts:0;
+    var t1GD=t1Info?t1Info.team.gd:0;
+    var t2GD=t2Info?t2Info.team.gd:0;
+    var t1Strength=t1Pts*10+t1GD*3;
+    var t2Strength=t2Pts*10+t2GD*3;
+    var totalStrength=t1Strength+t2Strength||1;
+    var t1Prob=Math.round((t1Strength/totalStrength)*100);
+    var t2Prob=100-t1Prob;
+    var pick=state.predictions[m.id]||'';
+    var pickedTeam=pick;
+    var pickedConf=0;
+    if(pick===m.team1) pickedConf=t1Prob;
+    else if(pick===m.team2) pickedConf=t2Prob;
+    // Get story
+    var story=MATCH_STORIES[m.id]||'Matchup of the round. Maybe.';
+    // Roast
+    var roastText='';
+    if(pickedTeam){
+      roastText=getRoast(pickedTeam,pickedConf);
+    }
+    // Confetti trigger (logical, not fire on re-render)
+    var confClass=pickedConf>=70?'conf-high':pickedConf>=40?'conf-med':'conf-low';
+    var winnerText=pick?'Predicted: <span class="text-neon">'+pick+'</span>':'Tap a team to predict the winner';
+    var hotFlames='';
+    if(pick){
+      var flames=Math.ceil(pickedConf/20);
+      for(var f=0;f<Math.min(5,flames);f++){hotFlames+='<span class="flame'+(f<4?' lit':'')+'">🔥</span>'}
+    }
+    html+='<div class="match-card">';
+    html+='<div class="match-meta"><span>Group '+m.group+' · '+m.date+'</span><span class="text-dim">'+m.venue+'</span></div>';
+    html+='<div class="match-story">💬 '+story+'</div>';
+    html+='<div class="match-teams">';
+    // Team 1
+    html+='<div class="match-team'+(pick===m.team1?' selected':'')+'" onclick="pickWinner(\''+m.id+'\',\''+m.team1.replace(/'/g,"\\'")+'\')"><span class="flag">'+(t1Info?t1Info.team.flag:'❓')+'</span><span class="team-label">'+m.team1+'</span><span class="team-record">'+t1Pts+' pts · '+(t1GD>0?'+':'')+t1GD+' GD</span></div>';
+    html+='<div class="match-vs">VS</div>';
+    // Team 2
+    html+='<div class="match-team'+(pick===m.team2?' selected':'')+'" onclick="pickWinner(\''+m.id+'\',\''+m.team2.replace(/'/g,"\\'")+'\')"><span class="flag">'+(t2Info?t2Info.team.flag:'❓')+'</span><span class="team-label">'+m.team2+'</span><span class="team-record">'+t2Pts+' pts · '+(t2GD>0?'+':'')+t2GD+' GD</span></div>';
+    html+='</div>';
+    // Prediction panel
+    html+='<div class="match-prediction">';
+    html+='<div>'+winnerText+'</div>';
+    if(pick){
+      html+='<div class="hot-meter">'+hotFlames+'</div>';
+      html+='<div class="mt-4"><span class="text-dim">Confidence: </span><strong>'+(pick===m.team1?t1Prob:t2Prob)+'%</strong></div>';
+      html+='<div class="conf-bar"><div class="conf-fill '+confClass+'" style="width:'+pickedConf+'%"></div></div>';
+      html+='<div class="roast">'+roastText+'</div>';
+    }
+    html+='<div class="text-dim text-xs mt-4">'+m.team1+': '+t1Prob+'% · '+m.team2+': '+t2Prob+'%</div>';
+    html+='</div></div>';
+  }
+  container.innerHTML=html;
+}
+
+function pickWinner(matchId,team){
+  var current=state.predictions[matchId];
+  if(current===team){
+    delete state.predictions[matchId];
+  }else{
+    state.predictions[matchId]=team;
+    // Calculate confidence for confetti
+    var match=null;
+    for(var i=0;i<UPCOMING_MATCHES.length;i++){if(UPCOMING_MATCHES[i].id===matchId){match=UPCOMING_MATCHES[i];break}}
+    if(match){
+      var ti=getTeamInfo(team);
+      if(ti){
+        var otherTeam=match.team1===team?match.team2:match.team1;
+        var oti=getTeamInfo(otherTeam);
+        var tStr=ti.team.pts*10+ti.team.gd*3;
+        var oStr=oti?oti.team.pts*10+oti.team.gd*3:1;
+        var conf=Math.round((tStr/(tStr+oStr))*100);
+        if(conf>=70) fireConfetti();
+      }
+    }
+  }
+  savePredictions();
+  renderPredictor();
+}
+
+function renderBracket(){
+  var container=document.getElementById('bracketContainer');
+  
+  // Build known qualifiers from group standings
+  var knownWinners={};
+  var knownRunners={};
+  for(var gi=0;gi<GROUPS.length;gi++){
+    var g=GROUPS[gi];
+    var sorted=JSON.parse(JSON.stringify(g.teams));
+    sorted.sort(function(a,b){return (b.pts-a.pts)||(b.gd-a.gd)||(b.gf-a.gf)});
+    // Group winner (if clearly ahead)
+    if(sorted[0].pts>=6||sorted[0].pts>sorted[1].pts+3){
+      knownWinners[g.name]=sorted[0].flag+' '+sorted[0].name;
+    }
+    // Runner up (if clearly ahead of 3rd)
+    if(sorted[1].pts>=4||sorted[1].pts>sorted[2].pts+3){
+      knownRunners[g.name]=sorted[1].flag+' '+sorted[1].name;
+    }
+  }
+  
+  function resolveSlot(slot){
+    // slot like "W Group A" or "RU Group B" or "3rd A/B/C/D/F"
+    var parts=slot.split(' ');
+    if(parts[0]==='W'&&parts[1]==='Group'&&knownWinners[parts[2]]) return knownWinners[parts[2]];
+    if(parts[0]==='RU'&&parts[1]==='Group'&&knownRunners[parts[2]]) return knownRunners[parts[2]];
+    if(parts[0]==='3rd'){
+      // Third place - just show it's TBD
+      return null;
+    }
+    if(slot.indexOf('W M')===0||slot.indexOf('W R')===0||slot.indexOf('W Q')===0||slot.indexOf('W S')===0) return null;
+    if(slot==='Runner-up') return null;
+    return slot;
+  }
+  
+  var rounds=[
+    {name:'R32 (1)',matches:BRACKET_R32.slice(0,8)},
+    {name:'R32 (2)',matches:BRACKET_R32.slice(8,16)},
+    {name:'R16 (1)',matches:[
+      {id:'r16a',t1:'W M74',t2:'W M77'},
+      {id:'r16b',t1:'W M73',t2:'W M75'},
+      {id:'r16c',t1:'W M89',t2:'W M90'},
+      {id:'r16d',t1:'W M97',t2:'W M98'}
+    ]},
+    {name:'R16 (2)',matches:[
+      {id:'r16e',t1:'W M81',t2:'W M82'},
+      {id:'r16f',t1:'W M83',t2:'W M84'},
+      {id:'r16g',t1:'W M85',t2:'W M86'},
+      {id:'r16h',t1:'W M87',t2:'W M88'}
+    ]},
+    {name:'QF',matches:[
+      {id:'qf1',t1:'W R16a',t2:'W R16b'},
+      {id:'qf2',t1:'W R16c',t2:'W R16d'},
+      {id:'qf3',t1:'W R16e',t2:'W R16f'},
+      {id:'qf4',t1:'W R16g',t2:'W R16h'}
+    ]},
+    {name:'SF',matches:[
+      {id:'sf1',t1:'W QF1',t2:'W QF2'},
+      {id:'sf2',t1:'W QF3',t2:'W QF4'}
+    ]},
+    {name:'FINAL',matches:[
+      {id:'fin',t1:'W SF1',t2:'W SF2'}
+    ]}
+  ];
+  
+  var html='';
+  for(var ri=0;ri<rounds.length;ri++){
+    var r=rounds[ri];
+    html+='<div class="round-col">';
+    html+='<div class="round-header">'+r.name+'</div>';
+    for(var mi=0;mi<r.matches.length;mi++){
+      var m=r.matches[mi];
+      var t1=resolveSlot(m.t1);
+      var t2=resolveSlot(m.t2);
+      html+='<div class="bracket-match">';
+      html+='<div class="bracket-team'+(t1?' winner':'')+'">';
+      if(t1) html+='<span class="b-name">'+t1+'</span>';
+      else html+='<span class="b-name bracket-empty">'+m.t1+'</span>';
+      html+='</div>';
+      html+='<div class="bracket-team'+(t2?' winner':'')+'">';
+      if(t2) html+='<span class="b-name">'+t2+'</span>';
+      else html+='<span class="b-name bracket-empty">'+m.t2+'</span>';
+      html+='</div>';
+      if(m.date) html+='<div style="font-size:0.5rem;color:var(--text-dim);text-align:center;padding-top:1px">'+m.date+'</div>';
+      html+='</div>';
+    }
+    html+='<div class="bracket-divider"></div></div>';
+  }
+  container.innerHTML=html;
+}
+
+function renderTrivia(){
+  var container=document.getElementById('triviaContainer');
+  var html='';
+  for(var i=0;i<TRIVIA.length;i++){
+    var t=TRIVIA[i];
+    html+='<div class="trivia-card" onclick="revealTrivia(this)">';
+    html+='<div class="trivia-num">⚽ Trivia #'+(i+1)+'</div>';
+    html+='<div class="trivia-q">'+t.q+'</div>';
+    if(t.h) html+='<div class="trivia-hint">💡 Hint: '+t.h+'</div>';
+    html+='<div class="trivia-a">'+t.a+'</div>';
+    html+='<div class="tap-reveal">👆 Tap to reveal answer</div>';
+    html+='</div>';
+  }
+  container.innerHTML=html;
+}
+
+function revealTrivia(el){
+  if(el.classList.contains('revealed')) return;
+  el.classList.add('revealed');
+  // Find the tap-reveal and hide it
+  var tap=el.querySelector('.tap-reveal');
+  if(tap) tap.style.display='none';
+}
+
+// ====== NAVIGATION ======
+document.getElementById('mainNav').addEventListener('click',function(e){
+  var btn=e.target.closest('button');
+  if(!btn) return;
+  var tab=btn.dataset.tab;
+  
+  var navBtns=document.querySelectorAll('.nav button');
+  for(var i=0;i<navBtns.length;i++) navBtns[i].classList.remove('active');
+  btn.classList.add('active');
+  
+  var panels=document.querySelectorAll('.panel');
+  for(var i=0;i<panels.length;i++) panels[i].classList.remove('active');
+  
+  // Capitalize first letter for panel id
+  var panelId='panel'+tab.charAt(0).toUpperCase()+tab.slice(1);
+  var panelEl=document.getElementById(panelId);
+  if(panelEl) panelEl.classList.add('active');
+  
+  state.activeTab=tab;
+  
+  // Re-render on switch
+  if(tab==='groups') renderGroups();
+  else if(tab==='predictor') renderPredictor();
+  else if(tab==='bracket') renderBracket();
+  else if(tab==='trivia') renderTrivia();
+  
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+// ====== INIT ======
+renderGroups();
+renderBracket();
+renderTrivia();
+renderPredictor();
+
+// Weekly trivia refresh (every 30s)
+setInterval(function(){
+  if(state.activeTab==='groups') renderGroups();
+},30000);
+
+console.log('⚽ World Cup 2026 Predictor loaded — Happy edition');
+console.log('📊 '+GROUPS.length+' groups, '+(GROUPS.length*4)+' teams');
+console.log('🔮 '+UPCOMING_MATCHES.length+' upcoming matches to predict');
+console.log('🧠 '+TRIVIA.length+' trivia facts with attitude');
+</script>
+</body>
+</html>
