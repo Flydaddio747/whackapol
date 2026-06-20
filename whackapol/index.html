@@ -482,18 +482,6 @@ function layoutHoles(){
     av.className = 'avatar';
     pol.appendChild(av);
     hole.appendChild(pol);
-    // Politician defensive handler (catches clicks directly on the pol)
-    pol.addEventListener('click', e => {
-      e.stopPropagation();
-      const idx = parseInt(pol.dataset.polIndex);
-      if(idx >= 0) onHoleClick(i, e);
-    });
-    pol.addEventListener('touchstart', e => {
-      e.stopPropagation();
-      e.preventDefault();
-      const idx = parseInt(pol.dataset.polIndex);
-      if(idx >= 0) onHoleClick(i, e);
-    }, {passive: false});
     // Flash overlay
     const flash = document.createElement('div');
     flash.className = 'whack-flash';
@@ -606,7 +594,7 @@ function dismissPolitician(holeIdx, wasWhacked){
 }
 
 // ===== CLICK / TAP HANDLING =====
-function onHoleClick(holeIdx, event){
+function onHoleClick(holeIdx, event){ _dc.clicks++; try{var de=document.getElementById("d_clicks");if(de)de.textContent=_dc.clicks}catch(e){}
   // Prevent double-fire: if this hole was just touch-whacked, skip click
   const hole = holes[holeIdx];
   if(hole && hole.dataset.touchWhacked){
@@ -812,7 +800,7 @@ function startGame(){
   state.scores = {republican:0, democrat:0, independent:0};
   state.timeLeft = 35;
   state.totalWhacks = 0;
-  state.playing = true;
+  state.playing = true; try{var ds=document.getElementById("d_state");if(ds)ds.textContent="running";var dp=document.getElementById("d_playing");if(dp)dp.textContent="true"}catch(e){}
 
   // Clear any lingering politicians
   for(let i=0; i<HOLE_COUNT; i++){
@@ -1386,6 +1374,25 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
     submitBtn.addEventListener('click', submitScore);
   }
 })();
+</script>
+<div id="debugPanel" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);color:#0f0;font-family:monospace;font-size:14px;z-index:9999;padding:20px 30px;border-radius:12px;border:2px solid #0f0;display:none;text-align:center;pointer-events:none;line-height:1.8">
+  <div style="font-size:18px;font-weight:bold;margin-bottom:8px">🔍 DIAGNOSTIC</div>
+  <div>State: <span id="d_state">not started</span></div>
+  <div>Playing: <span id="d_playing">false</span></div>
+  <div>Click count: <span id="d_clicks">0</span></div>
+  <div>Whack count: <span id="d_whacks">0</span></div>
+  <div>Active pols: <span id="d_pols">0</span></div>
+  <div>Time: <span id="d_time">-</span></div>
+</div>
+<div id="debugToggle" style="position:fixed;top:5px;right:5px;z-index:99999;padding:4px 8px;background:rgba(0,0,0,0.7);color:#0f0;font-family:monospace;font-size:10px;border-radius:4px;cursor:pointer;border:1px solid #0f0">DBG</div>
+<script>
+var _dc = {clicks:0, whacks:0};
+function showDbg(){ document.getElementById('debugPanel').style.display = 'block'; }
+function hideDbg(){ document.getElementById('debugPanel').style.display = 'none'; }
+document.getElementById('debugToggle').addEventListener('click', function(){
+  var p = document.getElementById('debugPanel');
+  p.style.display = p.style.display === 'block' ? 'none' : 'block';
+});
 </script>
 </body>
 </html>
