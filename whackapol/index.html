@@ -531,8 +531,22 @@ body{
 </div>
 
   <!-- Decorative mascots -->
-  <div style="position:fixed;left:25%;top:45%;transform:translateY(-50%) scaleX(-1);font-size:13.5rem;opacity:0.35;filter:sepia(1) saturate(2.4) hue-rotate(165deg) brightness(1.05);pointer-events:none;user-select:none;z-index:0">🫏</div>
-  <div style="position:fixed;right:25%;top:45%;transform:translateY(-50%);font-size:15rem;opacity:0.35;filter:sepia(1) saturate(2.4) hue-rotate(-40deg) brightness(1.05);pointer-events:none;user-select:none;z-index:0">🐘</div>
+  <style>
+    /* Decorative mascots: desktop sizes (unchanged) + smaller sizes on phones */
+    .wap-mascot{position:fixed;top:45%;transform:translateY(-50%);opacity:0.35;pointer-events:none;user-select:none;z-index:0;line-height:1}
+    .wap-mascot-left{left:25%;transform:translateY(-50%) scaleX(-1);font-size:13.5rem;filter:sepia(1) saturate(2.4) hue-rotate(165deg) brightness(1.05)}
+    .wap-mascot-right{right:25%;font-size:15rem;filter:sepia(1) saturate(2.4) hue-rotate(-40deg) brightness(1.05)}
+    @media (max-width:640px), (hover:none) and (pointer:coarse){
+      .wap-mascot-left{font-size:6rem}
+      .wap-mascot-right{font-size:6.6rem}
+    }
+    @media (max-width:640px) and (orientation:landscape){
+      .wap-mascot-left{font-size:4.5rem}
+      .wap-mascot-right{font-size:5rem}
+    }
+  </style>
+  <div class="wap-mascot wap-mascot-left" aria-hidden="true">🫏</div>
+  <div class="wap-mascot wap-mascot-right" aria-hidden="true">🐘</div>
 <!-- ===== GAME SCREEN ===== -->
 <div id="gameScreen" class="screen">
   <div class="game-header">
