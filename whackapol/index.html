@@ -1223,24 +1223,10 @@ function showEndScreen(){
   // Get roast based on whacks vs stated party
   const roast = getRoastMessage(s, playerParty);
 
-  // Determine alignment label
-  let label, alignParty;
-  if(rPct > dPct && rPct > iPct){
-    label = `You're ${rPct}% Republican`;
-    alignParty = 'Republican';
-  } else if(dPct > rPct && dPct > iPct){
-    label = `You're ${dPct}% Democrat`;
-    alignParty = 'Democrat';
-  } else if(iPct > rPct && iPct > dPct){
-    label = `You're ${iPct}% Independent`;
-    alignParty = 'Independent';
-  } else {
-    // Tie
-    label = 'You\'re Bipartisan!';
-    alignParty = 'Bipartisan';
-  }
-
-    alignmentLabel.textContent = roast.msg;
+  // Headline = the verdict from the roast engine (premise-correct since 2026-09-19).
+  // REMOVED (Steve, 2026-09-19): the old `You're NN% <party>` label. "% of your whacks" is a
+  // measure of who you ATTACK, not who you are — reading it as an identity is backwards.
+  alignmentLabel.textContent = roast.msg;
   document.getElementById('roastSub').innerHTML = roast.sub;
   document.getElementById('roastIcon').textContent = roast.icon;
 
@@ -1248,9 +1234,9 @@ function showEndScreen(){
     const partyNames = {republican:'GOP', democrat:'DEM', independent:'IND', none:'None'};
   const partyQ = playerParty ? partyNames[playerParty] || 'None' : 'Skipped';
   const cntR = s.republican || 0, cntD = s.democrat || 0, cntI = s.independent || 0;
+  const ownHits   = (playerParty && playerParty !== 'none') ? (s[playerParty] || 0) : 0;
+  const enemyHits = (s.republican + s.democrat + s.independent) - ownHits;
   if(playerParty && playerParty !== 'none'){
-    const ownHits   = s[playerParty] || 0;
-    const enemyHits = (s.republican + s.democrat + s.independent) - ownHits;
     breakdownDetail.textContent = `Whacks: ${total}  •  You said: ${partyQ}  •  👍 Opposition hits: ${enemyHits}  •  👎 Own-goal hits: ${ownHits}`;
   } else {
     breakdownDetail.textContent = `Whacks: ${total}  •  You said: ${partyQ}`;
@@ -1276,8 +1262,14 @@ function showEndScreen(){
     <div class="pct-footnote">Share of your whacks: GOP ${rPct}% · DEM ${dPct}% · IND ${iPct}%</div>
   `;
 
-  // Share text — full string goes to the clipboard; the on-page strip stays a short label
-  const shareStr = `🎯 Whack-a-Pol Results!\n${label}\n${total} whacks | GOP ${rPct}% • DEM ${dPct}% • IND ${iPct}%\nShow your loyalty at: ${window.location.href}`;
+  // Share text — rebuilt 2026-09-19 (Steve: the old "You're 70% Democrat" line read the logic
+  // backwards). Premise: you whack the OTHER side — opposition hits are the job, own-party hits
+  // are own goals. Verdict first, counts second, colours last, one % footnote stays on screen only.
+  const verdictTxt = roast.msg;
+  const sideTxt = (playerParty && playerParty !== 'none')
+    ? `You said ${partyQ} — ${enemyHits} enemy hit${enemyHits===1?'':'s'}, ${ownHits} own goal${ownHits===1?'':'s'}`
+    : `No side claimed — ${total} whacks thrown at everyone`;
+  const shareStr = `🎯 Whack-a-Pol — ${total} whacks\n${verdictTxt}\n${sideTxt}\nGOP ${cntR} • DEM ${cntD} • IND ${cntI}\nShow your loyalty at: ${window.location.href}`;
   window._wapShare = shareStr;
   shareText.textContent = '📤 Share my result';
   shareText.className = 'share-text';
@@ -1756,9 +1748,12 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
        → skip straight to the reveal (spec §Placement). */
     var prev = null;
     try{ prev = localStorage.getItem(LS_EMAIL); }catch(e){}
-    if(prev){
-      console.log('[Whack-a-Pol] whackapol_email already set ("' + prev +
-                  '") — skipping interstitial, straight to reveal.');
+    /* FIX (Steve, 2026-09-19): only stand down when an email was actually given.
+       The old test also skipped on the legacy values 'email' / 'skipped', so anyone who had ever
+       hit Skip — or whose submit ran while the API key was blank — never saw the gate again.
+       That is why no email prompt appeared before the results. */
+    if(prev === 'submitted'){
+      console.log('[Whack-a-Pol] whackapol_email already submitted — skipping interstitial, straight to reveal.');
       if(typeof options.onComplete === 'function'){
         setTimeout(function(){ options.onComplete(null); }, 0);
       }
@@ -1804,7 +1799,7 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
 
         /* Save locally + fire the POST, then reveal. The POST is async and
            never blocks the player (spec §Failure handling). */
-        try{ localStorage.setItem(LS_EMAIL, 'email'); }catch(e){}
+        try{ localStorage.setItem(LS_EMAIL, 'submitted'); }catch(e){}
         track('email_submitted');
         var captured = email;
         submitEmail(captured); // fire-and-forget; failure handled inside
