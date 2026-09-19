@@ -233,7 +233,7 @@ body{
 /* ===== POLITICIAN SPRITE ===== */
 .politician{
   position:absolute;
-  width:90%;height:90%;
+  width:97%;height:97%;
   border-radius:50%;
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
@@ -271,9 +271,9 @@ body{
 }
 .politician .avatar{
   overflow:hidden;
-  font-size:4.0rem;line-height:1;
+  font-size:4.6rem;line-height:1;
   filter:drop-shadow(0 0 8px rgba(255,255,255,0.3));
-  width:75%;height:75%;border-radius:50%;
+  width:94%;height:94%;border-radius:50%;
 }
 .politician .avatar img{
   width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;
@@ -286,21 +286,9 @@ body{
 }
 
 /* ===== PARTY-COLORED GLOW ===== */
-.politician.republican.active::after{border-color:rgba(255,68,68,0.2);animation-name:polGlowRed}
-@keyframes polGlowRed{
-  0%{box-shadow:0 0 8px rgba(255,68,68,0.1);border-color:rgba(255,68,68,0.15);opacity:0.5}
-  100%{box-shadow:0 0 25px rgba(255,68,68,0.3);border-color:rgba(255,68,68,0.35);opacity:1}
-}
-.politician.democrat.active::after{border-color:rgba(68,170,255,0.2);animation-name:polGlowBlue}
-@keyframes polGlowBlue{
-  0%{box-shadow:0 0 8px rgba(68,170,255,0.1);border-color:rgba(68,170,255,0.15);opacity:0.5}
-  100%{box-shadow:0 0 25px rgba(68,170,255,0.3);border-color:rgba(68,170,255,0.35);opacity:1}
-}
-.politician.independent.active::after{border-color:rgba(187,102,255,0.2);animation-name:polGlowPurple}
-@keyframes polGlowPurple{
-  0%{box-shadow:0 0 8px rgba(187,102,255,0.1);border-color:rgba(187,102,255,0.15);opacity:0.5}
-  100%{box-shadow:0 0 25px rgba(187,102,255,0.3);border-color:rgba(187,102,255,0.35);opacity:1}
-}
+/* Party glow overrides REMOVED (Sep 19 2026, Steve msg 33191): the aura that pops
+   on an active politician is now the neutral white glow from .politician.active::after
+   for every party. No party tint is visible anywhere during play. */
 
 /* ===== WHACK FLASH ===== */
 .whack-flash{
@@ -310,9 +298,10 @@ body{
   z-index:5;
   transform:scale(0);
 }
-.whack-flash.republican{background:radial-gradient(circle,rgba(255,68,68,0.6),transparent 60%);}
-.whack-flash.democrat{background:radial-gradient(circle,rgba(68,170,255,0.6),transparent 60%);}
-.whack-flash.independent{background:radial-gradient(circle,rgba(187,102,255,0.6),transparent 60%);}
+/* neutral burst for every party — no party tint (Steve msg 33191) */
+.whack-flash.republican,
+.whack-flash.democrat,
+.whack-flash.independent{background:radial-gradient(circle,rgba(235,235,255,0.6),transparent 60%);}
 .whack-flash.show{
   animation:flashPop 0.3s ease-out forwards;
 }
@@ -418,7 +407,12 @@ body{
   filter:drop-shadow(0 0 12px rgba(51,204,255,0.2));
 }
 .breakdown-detail{font-size:0.8rem;color:#9999cc;margin-bottom:12px;line-height:1.5;letter-spacing:0.3px}
+.share-hint{
+  font-size:0.68rem;color:#5f5f88;margin:-2px 0 10px;line-height:1.35;
+}
 .share-text{
+  display:block;width:100%;max-width:320px;margin-left:auto;margin-right:auto;
+  font-family:inherit;text-align:center;
   background:rgba(255,255,255,0.04);
   -webkit-backdrop-filter:blur(8px);
   backdrop-filter:blur(8px);
@@ -483,7 +477,7 @@ body{
   .score-badge{font-size:0.65rem;padding:4px 8px}
   .score-badge .num{font-size:0.8rem;min-width:16px}
   .timer{font-size:1.1rem;min-width:38px}
-  .politician .avatar{font-size:1.2rem;width:70%;height:70%}
+  .politician .avatar{font-size:1.7rem;width:93%;height:93%}
   .result-card{padding:14px 16px}
   .aligntext{font-size:1.1rem}
   .game-header{padding:5px 8px}
@@ -494,7 +488,7 @@ body{
   .subtitle{font-size:1.4rem}
   .rules-box{font-size:1.1rem;line-height:1.6;padding:20px 24px;text-align:center}
   .field{max-width:580px}
-  .politician .avatar{font-size:2rem;width:72%;height:72%}
+  .politician .avatar{font-size:2.6rem;width:94%;height:94%}
   .politician .name{font-size:0.6rem}
 }
 @media(min-height:800px){
@@ -520,7 +514,7 @@ body{
     <div class="whack">WHACK-</div>
     <div class="pol">A-POL</div>
   </div>
-  <div class="subtitle" style="font-size:1.2rem">Be a king-maker, your party's juggernaut!</div>
+  <div class="subtitle" style="font-size:1.2rem">Be a kingmaker — your party's juggernaut!</div>
   <div class="subtitle" style="margin-top:2px;font-size:1.8rem">Whack the opposition!</div>
   <div class="rules-box">
     35-second rounds, 42 politicians<br>
@@ -529,6 +523,7 @@ body{
     those other guys
   </div>
   <button class="start-btn" id="startBtn">▶&nbsp; PLAY</button>
+  <button id="startLbBtn" style="margin-top:12px;padding:8px 22px;border-radius:30px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#8888bb;font-size:0.85rem;cursor:pointer;touch-action:manipulation">🏆 Leaderboard</button>
 </div>
 
   <!-- Decorative mascots -->
@@ -579,9 +574,6 @@ body{
       <button class="quiz-btn" data-party="independent" style="background:linear-gradient(135deg,#8844cc,#bb66ff);border:none;color:#fff;font-size:0.85rem;font-weight:700;padding:8px 14px;border-radius:30px;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;transition:transform 0.15s">🟣 IND</button>
       <button class="quiz-btn" data-party="none" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#aaaacc;font-size:0.8rem;font-weight:600;padding:7px 12px;border-radius:30px;cursor:pointer;touch-action:manipulation">⏭ Skip</button>
     </div>
-    <div style="margin-top:12px;width:100%;max-width:280px">
-      <input type="email" id="emailInput" placeholder="Email (optional — leaderboard)" style="width:100%;padding:8px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e0e0ff;font-size:0.85rem;text-align:center;outline:none" autocomplete="email" autocapitalize="none">
-    </div>
     <div class="quiz-btn-hint" style="font-size:0.75rem;color:#666688;margin-top:8px;">Your answer stays private — results below</div>
   </div>
 </div>
@@ -589,11 +581,11 @@ body{
 <!-- ===== LEADERBOARD ===== -->
 <div id="leaderboardScreen" class="screen" style="justify-content:flex-start;padding-top:20px;overflow-y:auto">
   <div style="font-size:1.7rem;font-weight:800;margin-bottom:4px">🏆 Leaderboard</div>
-  <div style="font-size:0.75rem;color:#666688;margin-bottom:16px">Top 10 whackers</div>
+  <div id="lbSub" style="font-size:0.75rem;color:#666688;margin-bottom:16px">Your top 10 rounds on this device</div>
   <div id="lbContent" style="width:100%;max-width:360px">
-    <div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">Play a game to appear on the leaderboard!</div>
+    <div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">No rounds recorded yet — finish a round and your score lands here.</div>
   </div>
-  <button onclick="document.getElementById('leaderboardScreen').classList.remove('active');document.getElementById('endScreen').classList.add('active')"
+  <button onclick="wapCloseLb()"
     style="margin-top:16px;padding:10px 30px;border-radius:30px;border:1px solid #555;background:transparent;color:#888;font-size:0.9rem;cursor:pointer;touch-action:manipulation">Back</button>
 </div>
 
@@ -606,7 +598,8 @@ body{
     <div style="font-size:0.85rem;color:#ccccee;margin-bottom:8px;line-height:1.4;padding:0 10px;" id="roastSub"></div>
     <div class="breakdown-detail" id="breakdownDetail"></div>
     <div id="alignmentBars"></div>
-    <div class="share-text" id="shareText">Tap to copy result</div>
+    <button class="share-text" id="shareText" type="button">📤 Share my result</button>
+    <div class="share-hint" id="shareHint">Copies your score as a one-line result you can paste anywhere</div>
   </div>
   <div class="end-buttons">
     <button class="play-again-btn" id="playAgainBtn">▶&nbsp; PLAY AGAIN</button>
@@ -631,9 +624,7 @@ const POLITICIANS = [
   {name:'DeSantis',  emoji:'🏝️', party:'republican', color:'#ff4444', photo:'polportraits/desantis.jpg'},
   {name:'Haley',     emoji:'🎯', party:'republican', color:'#ff4444', photo:'polportraits/haley.jpg'},
   {name:'Ramaswamy', emoji:'🔬', party:'republican', color:'#ff4444', photo:'polportraits/ramaswamy.jpg'},
-  {name:'Graham',    emoji:'⚖️', party:'republican', color:'#ff4444', photo:'polportraits/graham.jpg'},
   {name:'Cruz',      emoji:'⛽', party:'republican', color:'#ff4444', photo:'polportraits/cruz.jpg'},
-  {name:'McConnell',  emoji:'🏛️', party:'republican', color:'#ff4444', photo:'polportraits/mcconnell.jpg'},
   {name:'Stefanik',  emoji:'📢', party:'republican', color:'#ff4444', photo:'polportraits/stefanik.jpg'},
   {name:'Gaetz',     emoji:'🎙️', party:'republican', color:'#ff4444', photo:'polportraits/gaetz.jpg'},
   {name:'Greene',    emoji:'🔍', party:'republican', color:'#ff4444', photo:'polportraits/greene.jpg'},
@@ -647,6 +638,8 @@ const POLITICIANS = [
   {name:'Boebert',   emoji:'🔫', party:'republican', color:'#ff4444', photo:'polportraits/boebert.jpg'},
   {name:'Jordan',    emoji:'🏋️', party:'republican', color:'#ff4444', photo:'polportraits/jordan.jpg'},
   {name:'Noem',      emoji:'🌾', party:'republican', color:'#ff4444', photo:'polportraits/noem.jpg'},
+  {name:'Thune',     emoji:'⚖️', party:'republican', color:'#ff4444', photo:'polportraits/thune.jpg'},
+  {name:'Abbott',    emoji:'⭐', party:'republican', color:'#ff4444', photo:'polportraits/abbott.jpg'},
   // ===== DEMOCRATS (20) =====
   {name:'Biden',     emoji:'🇺🇸', party:'democrat', color:'#44aaff', photo:'polportraits/biden.jpg'},
   {name:'Harris',    emoji:'👩⚖️', party:'democrat', color:'#44aaff', photo:'polportraits/harris.jpg'},
@@ -924,8 +917,8 @@ function showTapRipple(event){
 
 // ===== PARTICLE BURST =====
 function spawnParticles(el, party){
-  const colors = {republican:'#ff4444', democrat:'#44aaff', independent:'#bb66ff'};
-  const color = colors[party] || '#ffffff';
+  // neutral spark for every party — no party tint (Steve msg 33191)
+  const color = '#f2f2ff';
   const rect = el.getBoundingClientRect();
   const fieldRect = field.getBoundingClientRect();
   const cx = rect.left - fieldRect.left + rect.width/2;
@@ -1123,19 +1116,27 @@ function getRoastMessage(scores, playerParty){
   const sorted = [r, d, i].slice().sort(function(a,b){ return b - a; });
   const isTie = sorted[0] === sorted[1] && sorted[0] > 0;
 
+  // Spell out small numbers — never start a sentence with a digit
+  const WORDS = ['zero','one','two','three','four','five','six','seven','eight','nine','ten',
+                 'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen',
+                 'eighteen','nineteen','twenty'];
+  function numWord(n){ return (n >= 0 && n <= 20) ? WORDS[n] : String(n); }
+  function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+  function countN(n, singular, plural){ return n + ' ' + (n === 1 ? singular : plural); }
+
   // ===== No party claimed =====
   if(!playerParty || playerParty === 'none'){
     if(isTie && r > 0 && d > 0 && i > 0 && total >= 9){
-      return {msg: "Good luck at the ballot box — your vote doesn't count!", sub: "Perfectly balanced, as all things should be. You stand for nothing, you fall for everything.", icon: '⚖️'};
+      return {msg: "Good luck at the ballot box — your vote doesn't count!", sub: "Perfectly balanced, as all things should be. You stand for nothing, so you fall for everything.", icon: '⚖️'};
     }
     if(isTie && total >= 6){
-      return {msg: "A pox on both their houses!", sub: "You're whacking both sides equally. That's a statement right there.", icon: '🧱'};
+      return {msg: "A pox on both your houses!", sub: "You're whacking both sides equally. That's a statement right there.", icon: '🧱'};
     }
     if(rPct > 70){
-      return {msg: "You hate the GOP machine!", sub: `${r} Republican whacks. Your <span style="color:#ff6666">red</span> blood runs deep.`, icon: '🔴'};
+      return {msg: "You hate the GOP machine!", sub: `${cap(numWord(r))} Republican whacks. Your <span style="color:#ff6666">red</span> blood runs deep.`, icon: '🔴'};
     }
     if(dPct > 70){
-      return {msg: "You hate the Democrat machine!", sub: `${d} Democrat whacks. <span style="color:#66bbff">Blue</span> is clearly your color.`, icon: '🔵'};
+      return {msg: "You hate the Democrat machine!", sub: `${cap(numWord(d))} Democrat whacks. <span style="color:#66bbff">Blue</span> is clearly your color.`, icon: '🔵'};
     }
     return {msg: "You participated! That's what counts.", sub: `GOP ${r} • DEM ${d} • IND ${i} — democracy in action.`, icon: '🗳️'};
   }
@@ -1147,12 +1148,12 @@ function getRoastMessage(scores, playerParty){
       return {msg: "That was quick.", sub: `Only ${total} whacks. The machines never even noticed you.`, icon: '⏱️'};
     }
     if(i > 0 && i >= others){
-      return {msg: "You whacked your OWN independents!", sub: `${i} of your ${total} whacks were independents. You're not the solution, you're the problem.`, icon: '🪘'};
+      return {msg: "You whacked your OWN Independents!", sub: `You aimed ${i} of your ${total} whacks at your fellow Independents. You're not the solution — you're the problem.`, icon: '🪘'};
     }
     if(i === 0){
-      return {msg: "Chaos with no loyalty — we respect it.", sub: `You whacked ${others} politicians and never touched an independent. Nobody is safe from you.`, icon: '🪘'};
+      return {msg: "Chaos with no loyalty — we respect it.", sub: `You whacked ${others} politicians and never touched an Independent. Nobody is safe from you.`, icon: '🪘'};
     }
-    return {msg: "Truly, you march to the beat of your own drum!", sub: `${others} of your ${total} whacks landed on the two big parties. An independent doing independent things.`, icon: '🪘'};
+    return {msg: "Truly, you march to the beat of your own drum!", sub: `You landed ${others} of your ${total} whacks on the two big parties. An independent doing independent things.`, icon: '🪘'};
   }
 
   // ===== Partisan player: the opposition is the job, your own side is an own goal =====
@@ -1172,19 +1173,19 @@ function getRoastMessage(scores, playerParty){
     return {msg: "That was quick.", sub: `Only ${total} whacks. The machines never even noticed you.`, icon: '⏱️'};
   }
   if(own === 0){
-    const oppTxt = topOther ? (topOther.n + ' ' + PLURAL[topOther.p]) : 'the other side';
-    return {msg: "You did your job!", sub: `You said ${TICK[playerParty]}. ${oppTxt} took the beating and you never once touched a ${ownOne}. Every one of your ${total} whacks landed where it counts.`, icon: '🤝'};
+    const oppTxt = topOther ? countN(topOther.n, 'hit', 'hits') + ' on ' + PLURAL[topOther.p] : 'hits on the other side';
+    return {msg: "You did your job!", sub: `You said ${TICK[playerParty]}. You landed ${oppTxt} and never once touched a ${ownOne} — every one of your ${total} whacks landed where it counts.`, icon: '🤝'};
   }
   if(ownPct <= 20){
-    return {msg: "Solid work — one slip.", sub: `${enemy} of your ${total} whacks were the opposition. ${own} was your own side. Friendly fire happens.`, icon: '🎯'};
+    return {msg: "Solid work — one slip.", sub: `You put ${enemy} of your ${total} whacks on the opposition. ${own === 1 ? 'One was' : cap(numWord(own)) + ' were'} your own side. Friendly fire happens.`, icon: '🎯'};
   }
   if(own === total){
     return {msg: "You only whacked your OWN party!", sub: `All ${total} whacks were ${ownName}. You said ${TICK[playerParty]}. Turn around — the enemy is behind you.`, icon: '🙈'};
   }
   if(ownPct >= 50){
-    return {msg: "Why are you whacking your OWN people?!", sub: `${own} of your ${total} whacks were ${ownName}, and you claim to be ${TICK[playerParty]}. Somebody check that voter registration.`, icon: '🔁'};
+    return {msg: "Why are you whacking your OWN people?!", sub: `You aimed ${own} of your ${total} whacks at ${ownName} — and you claim to be ${TICK[playerParty]}. Somebody check that voter registration.`, icon: '🔁'};
   }
-  return {msg: "Half opposition, half friendly fire.", sub: `${enemy} against the other side, ${own} against your own ${ownName}. Pick a lane.`, icon: '⚖️'};
+  return {msg: "Half opposition, half friendly fire.", sub: `Pick a lane: ${enemy} whacks against the other side, ${own} against your own ${ownName}.`, icon: '⚖️'};
 }
 
 function endGame(){
@@ -1278,7 +1279,7 @@ function showEndScreen(){
   // Share text — full string goes to the clipboard; the on-page strip stays a short label
   const shareStr = `🎯 Whack-a-Pol Results!\n${label}\n${total} whacks | GOP ${rPct}% • DEM ${dPct}% • IND ${iPct}%\nShow your loyalty at: ${window.location.href}`;
   window._wapShare = shareStr;
-  shareText.textContent = '📋 Tap to copy my result';
+  shareText.textContent = '📤 Share my result';
   shareText.className = 'share-text';
 
   // Trigger bar animations after render
@@ -1329,36 +1330,76 @@ document.querySelectorAll('.quiz-btn').forEach(btn => {
   }, {passive:true});
 });
 
-// ===== SHARE TEXT =====
-shareText.addEventListener('click', function(){
-  const text = window._wapShare || this.textContent.replace('📋 ','');
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(() => {
-      this.textContent = '✅ Copied!';
-      this.classList.add('copied');
-      setTimeout(() => {
-        this.textContent = '📋 Tap to copy my result';
-        this.classList.remove('copied');
-      }, 2000);
-    }).catch(() => {
-      fallbackCopy(text);
-      this.textContent = '✅ Copied!';
-      setTimeout(() => { this.textContent = '📋 Tap to copy my result'; }, 2000);
-    });
-  } else {
-    fallbackCopy(text);
+// ===== SHARE RESULT (rebuilt Sep 19 2026, Steve msg 33196) =====
+// Was: silent no-op on plain http (navigator.clipboard needs a secure context,
+// and the fallback gave no feedback), with a label nobody understood.
+// Now: native share sheet where available, clipboard or execCommand otherwise,
+// and ALWAYS visible feedback.
+(function(){
+  var btn  = document.getElementById('shareText');
+  var hint = document.getElementById('shareHint');
+  if(!btn) return;
+  var LABEL = '📤 Share my result';
+  var HINT  = 'Copies your score as a one-line result you can paste anywhere';
+  function flash(msg, ok, hold){
+    btn.textContent = msg;
+    btn.classList.toggle('copied', !!ok);
+    if(hint) hint.textContent = ok ? 'Paste it into a text, a post, or a chat' : 'Long-press the text above to copy it by hand';
+    setTimeout(function(){
+      btn.textContent = LABEL;
+      btn.classList.remove('copied');
+      if(hint) hint.textContent = HINT;
+    }, hold || 2600);
   }
-});
-
-function fallbackCopy(text){
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed'; ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand('copy'); } catch(e) {}
-  document.body.removeChild(ta);
-}
+  // Copy blocked (old browser / no clipboard permission): put the text on screen
+  // so the player can select it by hand instead of getting a silent dead tap.
+  function showTextForManualCopy(text){
+    flash(text, false, 9000);
+    try {
+      var r = document.createRange(); r.selectNodeContents(btn);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    } catch(e){}
+  }
+  function execCopy(text){
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly','');
+    ta.style.position='fixed'; ta.style.top='0'; ta.style.left='0';
+    ta.style.width='1px'; ta.style.height='1px'; ta.style.opacity='0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { ta.setSelectionRange(0, text.length); } catch(e){}
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e){ ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  function doCopy(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(
+        function(){ flash('✅ Copied — paste it anywhere', true); },
+        function(){ var ok = execCopy(text); if(ok){ flash('✅ Copied — paste it anywhere', true); } else { showTextForManualCopy(text); } });
+    } else {
+      var ok = execCopy(text);
+      if(ok){ flash('✅ Copied — paste it anywhere', true); } else { showTextForManualCopy(text); }
+    }
+  }
+  btn.addEventListener('click', function(){
+    var text = window._wapShare || '';
+    if(!text){ flash('Play a round first', false); return; }
+    window._wapShareShown = text;
+    if(navigator.share){
+      navigator.share({ title: 'Whack-a-Pol', text: text }).then(
+        function(){ flash('✅ Shared!', true); },
+        function(err){
+          if(err && err.name === 'AbortError'){ return; }
+          doCopy(text);
+        });
+      return;
+    }
+    doCopy(text);
+  });
+})();
 
 // ===== EVENT BINDINGS =====
 startBtn.addEventListener('click', startGame);
@@ -1389,7 +1430,7 @@ if('serviceWorker' in navigator){
 }
 
 console.log('🎯 Whack-a-Pol loaded. Ready to play!');
-console.log('👥 42 Politicians ready');
+console.log('👥 ' + POLITICIANS.length + ' Politicians ready');
 console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
 
 })();
@@ -1397,16 +1438,37 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
 // ===== LEADERBOARD =====
 (function(){
   var id = function(x){ return document.getElementById(x); };
-  var viewLbBtn = id('viewLbBtn');
-  var endScreen = id('endScreen');
+  var viewLbBtn  = id('viewLbBtn');
+  var startLbBtn = id('startLbBtn');
+  var endScreen  = id('endScreen');
+  var startScreenEl = id('startScreen');
   var lbScreen = id('leaderboardScreen');
+  var lbFrom = 'endScreen';
+  window.wapOpenLb = function(from){
+    lbFrom = from || 'endScreen';
+    ['startScreen','gameScreen','quizScreen','endScreen','leaderboardScreen'].forEach(function(sid){
+      var el = id(sid); if(el) el.classList.remove('active');
+    });
+    lbScreen.classList.add('active');
+    renderLeaderboard();
+  };
+  window.wapCloseLb = function(){
+    if(!lbScreen) return;
+    lbScreen.classList.remove('active');
+    var back = id(lbFrom === 'startScreen' ? 'startScreen' : 'endScreen');
+    if(back) back.classList.add('active');
+  };
   function renderLeaderboard(){
     var el = id('lbContent');
     if(!el) return;
     try {
       var entries = JSON.parse(localStorage.getItem('wap_lb') || '[]');
+      var sub = id('lbSub');
+      if(sub) sub.textContent = entries.length
+        ? (entries.length === 1 ? 'Your best round on this device' : 'Your top ' + Math.min(10, entries.length) + ' of ' + entries.length + ' rounds on this device')
+        : 'Your top 10 rounds on this device';
       if(!entries.length){
-        el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">No leaderboard entries yet. Play a game!</div>';
+        el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">No rounds recorded yet — finish a round and your score lands here.</div>';
         return;
       }
       entries.sort(function(a,b){ return b.score - a.score; });
@@ -1426,12 +1488,11 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
       el.innerHTML = '<div style="color:red">Error loading leaderboard</div>';
     }
   }
-  if(viewLbBtn && endScreen && lbScreen){
-    viewLbBtn.addEventListener('click', function(){
-      endScreen.classList.remove('active');
-      lbScreen.classList.add('active');
-      renderLeaderboard();
-    });
+  if(viewLbBtn && lbScreen){
+    viewLbBtn.addEventListener('click', function(){ window.wapOpenLb('endScreen'); });
+  }
+  if(startLbBtn && lbScreen){
+    startLbBtn.addEventListener('click', function(){ window.wapOpenLb('startScreen'); });
   }
 })();
 </script>
@@ -1450,7 +1511,7 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
      Both keys are EMPTY until Steve creates the MailerLite account and
      fills them in. While empty, the POST is skipped (console warning) and
      the player is never blocked. NEVER commit a real API key to source. */
-  const MAILERLITE_API_KEY = ''; // TODO: set when Steve creates MailerLite account
+  const MAILERLITE_API_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0IiwianRpIjoiM2ZkM2FiNDkxNWVlZGQ4YjdhMmEzNjYyM2M4YmU2YjQ5ZTJhZWI2ODYxNWY4OGU3MWFkN2YwNzI5YjliNWMzZGMwNzBlNzRjN2QyZDRmNDYiLCJpYXQiOjE3ODcxMTc0MzguMDE1NjUzLCJuYmYiOjE3ODcxMTc0MzguMDE1NjU1LCJleHAiOjQ5NDI3OTEwMzguMDEwNDU1LCJzdWIiOiIyNTk1OTIyIiwic2NvcGVzIjpbXX0.wTo6tZ84HLftJTMEF9M2MW282sGe0I1DoQ1ej5DgwOgw7gwaHz1kmJKzfL4-KNjphLOBHhLYGCAYnznmsXsMJrXPIsoCRrgDRzG7_BFJtYdDLIar_l7RCOGORK1laGHDg3prjTwmdXr1eSkRMpV5HqfKwui9wv7W0vTC98xsxi-J6f_CgfvI6Xw1aw4N3wmfBuTM_P5usYyORck_K-qIvr80X-XzwHlYc7hy1vhlgj7f0HS6k2ch0dCOvpBa61cVphdLF6-RMwNaxuq-9RWDWmReqOvZl5-Dg08-YELuY_4HrGGXqSmR38PneArCr6B7vRY6YvBoTBUZcHEzKmvz8iju99PLjLHAONewiFLVmldgY9Qctqo7JSDdtRegafTIoLL55SuFyp0NftH6zqE7YRPYkxzxGqhDwXKbSDI7_lin3ddKVLW0Sx6_QEz5BfqzNSN_Z_g62FKYTVRcwHG-ZmsiPFM6ZhQGyDKaAXT4avjKCwS5olVAMXYSszJIYcAToT0JJBUa98jQIdQ-NJN0Ltff_5cz4zwZV_xd-leu55y0rkamXgFTGQRERVpjuU38jiA1E7ldfRdo-K8JfrMNny_hMWZZ5ScGhEmvjpcre3EFB_UzkHM8qBrapN54iYBW4G2WaSXErmUlXoITeUQdWMmjFy4uZ-9BvBaDREdSgRE'; // wired from mailerlite_token.txt (verified live 2026-09-19)
   const MAILERLITE_GROUP_ID = '';
   const MAILERLITE_ENDPOINT = 'https://connect.mailerlite.com/api/subscribers'; // API v3
   const MAILERLITE_TAGS     = ['whackapol_capture']; // tag per funnel plan
