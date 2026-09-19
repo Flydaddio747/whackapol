@@ -410,6 +410,7 @@ body{
 .alignment-bar.blue .fill{background:linear-gradient(90deg,#44aaff,#66ccff);box-shadow:0 0 8px rgba(68,170,255,0.3)}
 .alignment-bar.purple .fill{background:linear-gradient(90deg,#bb66ff,#dd88ff);box-shadow:0 0 8px rgba(187,102,255,0.3)}
 .alignment-bar .pct{font-size:0.8rem;font-weight:700;min-width:40px;text-align:left}
+.pct-footnote{font-size:0.7rem;color:#666688;margin-top:10px;letter-spacing:0.2px}
 .aligntext{
   font-size:1.3rem;font-weight:900;margin:12px 0 4px;
   background:linear-gradient(135deg,#33ccff,#9333ff);
@@ -1165,16 +1166,16 @@ if(whackedAllEqual && total >= 9){
     // Whacked mostly the other party
     if(otherMax >= 70 && selfPct <= 20 && playerParty !== 'none'){
       if(playerParty === 'republican' && maxParty === 'democrat'){
-        return {msg: "Whacked mostly Dems but said you were GOP? Hmm", sub: `Said you were Republican, whacked ${dPct}% Democrats. The primary challenge is real.`, icon: '👀'};
+        return {msg: "Whacked mostly Dems but said you were GOP? Hmm", sub: `Said you were Republican, whacked ${scores.democrat} Democrats. The primary challenge is real.`, icon: '👀'};
       }
       if(playerParty === 'democrat' && maxParty === 'republican'){
-        return {msg: "Whacked mostly GOP but said you were DEM? Oh dear", sub: `Said you were Democrat, whacked ${rPct}% Republicans. The working groups are concerned.`, icon: '📋'};
+        return {msg: "Whacked mostly GOP but said you were DEM? Oh dear", sub: `Said you were Democrat, whacked ${scores.republican} Republicans. The working groups are concerned.`, icon: '📋'};
       }
       if(maxParty === 'republican'){
         return {msg: "Have you considered switching teams?", sub: `You said ${playerParty} but your whacks say GOP. We don't make the rules.`, icon: '🔄'};
       }
       if(maxParty === 'democrat'){
-        return {msg: "Your whacks are blue, even if your voter registration isn't!", sub: `Actions speak louder than party registration. ${dPct}% Democrat whacks.`, icon: '💙'};
+        return {msg: "Your whacks are blue, even if your voter registration isn't!", sub: `Actions speak louder than party registration. ${scores.democrat} Democrat whacks.`, icon: '💙'};
       }
     }
     
@@ -1194,17 +1195,17 @@ if(whackedAllEqual && total >= 9){
   
   // ===== Generic results =====
   if(maxParty === 'republican' && rPct > 80){
-    return {msg: "You hate the GOP machine!", sub: `${rPct}% Republican whacks. Your <span style="color:#ff6666">red</span> blood runs deep.`, icon: '🔴'};
+    return {msg: "You hate the GOP machine!", sub: `${scores.republican} Republican whacks. Your <span style="color:#ff6666">red</span> blood runs deep.`, icon: '🔴'};
   }
   if(maxParty === 'democrat' && dPct > 80){
-    return {msg: "You hate the Democrat machine!", sub: `${dPct}% Democrat whacks. <span style="color:#66bbff">Blue</span> is clearly your color.`, icon: '🔵'};
+    return {msg: "You hate the Democrat machine!", sub: `${scores.democrat} Democrat whacks. <span style="color:#66bbff">Blue</span> is clearly your color.`, icon: '🔵'};
   }
   if(maxParty === 'independent' && iPct > 50 && total <= 4){
     return {msg: "Rare breed spotted!", sub: "An independent who actually found the independents. That's commitment.", icon: '🦄'};
   }
   
   // ===== Fallback =====
-  return {msg: "You participated! That's what counts.", sub: `GOP ${rPct}% • DEM ${dPct}% • IND ${iPct}% — democracy in action.`, icon: '🗳️'};
+  return {msg: "You participated! That's what counts.", sub: `GOP ${scores.republican} • DEM ${scores.democrat} • IND ${scores.independent} — democracy in action.`, icon: '🗳️'};
 }
 
 function endGame(){
@@ -1263,34 +1264,36 @@ function showEndScreen(){
   document.getElementById('roastSub').innerHTML = roast.sub;
   document.getElementById('roastIcon').textContent = roast.icon;
 
-  // Breakdown detail
+  // Breakdown detail — lead with counts; percentages live in ONE footnote under the bars
     const partyNames = {republican:'GOP', democrat:'DEM', independent:'IND', none:'None'};
   const partyQ = playerParty ? partyNames[playerParty] || 'None' : 'Skipped';
-  const detail = `🔴 GOP: ${rPct}%  •  🔵 DEM: ${dPct}%  •  🟣 IND: ${iPct}%`;
-  breakdownDetail.textContent = `Whacks: ${total} | You said: ${partyQ} | ${detail}`;
+  const cntR = s.republican || 0, cntD = s.democrat || 0, cntI = s.independent || 0;
+  breakdownDetail.textContent = `Whacks: ${total}  •  You said: ${partyQ}`;
 
-  // Alignment bars
+  // Alignment bars — raw whack COUNT to the right of each bar (no % on the bars)
   alignmentBars.innerHTML = `
     <div class="alignment-bar red">
       <span class="label">GOP</span>
       <div class="track"><div class="fill" style="width:${rPct}%"></div></div>
-      <span class="pct">${rPct}%</span>
+      <span class="pct">${cntR}</span>
     </div>
     <div class="alignment-bar blue">
       <span class="label">DEM</span>
       <div class="track"><div class="fill" style="width:${dPct}%"></div></div>
-      <span class="pct">${dPct}%</span>
+      <span class="pct">${cntD}</span>
     </div>
     <div class="alignment-bar purple">
       <span class="label">IND</span>
       <div class="track"><div class="fill" style="width:${iPct}%"></div></div>
-      <span class="pct">${iPct}%</span>
+      <span class="pct">${cntI}</span>
     </div>
+    <div class="pct-footnote">Share of your whacks: GOP ${rPct}% · DEM ${dPct}% · IND ${iPct}%</div>
   `;
 
-  // Share text
+  // Share text — full string goes to the clipboard; the on-page strip stays a short label
   const shareStr = `🎯 Whack-a-Pol Results!\n${label}\n${total} whacks | GOP ${rPct}% • DEM ${dPct}% • IND ${iPct}%\nShow your loyalty at: ${window.location.href}`;
-  shareText.textContent = '📋 ' + shareStr;
+  window._wapShare = shareStr;
+  shareText.textContent = '📋 Tap to copy my result';
   shareText.className = 'share-text';
 
   // Trigger bar animations after render
@@ -1343,17 +1346,19 @@ document.querySelectorAll('.quiz-btn').forEach(btn => {
 
 // ===== SHARE TEXT =====
 shareText.addEventListener('click', function(){
-  const text = this.textContent.replace('📋 ','');
+  const text = window._wapShare || this.textContent.replace('📋 ','');
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(() => {
       this.textContent = '✅ Copied!';
       this.classList.add('copied');
       setTimeout(() => {
-        this.textContent = text;
+        this.textContent = '📋 Tap to copy my result';
         this.classList.remove('copied');
       }, 2000);
     }).catch(() => {
       fallbackCopy(text);
+      this.textContent = '✅ Copied!';
+      setTimeout(() => { this.textContent = '📋 Tap to copy my result'; }, 2000);
     });
   } else {
     fallbackCopy(text);
