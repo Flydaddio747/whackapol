@@ -981,6 +981,18 @@ function wapToggleSound(){
 }
 window.wapToggleSound = wapToggleSound;
 
+/* A hidden tab must never make noise (Steve, 2026-09-19: "hearing the game playing in the
+   background"). Switching tabs/windows silently suspends the audio context; coming back
+   resumes it unless the player has muted the game. Zero effect on gameplay timing. */
+document.addEventListener('visibilitychange', function(){
+  try{
+    if(document.hidden){ if(audioCtx && audioCtx.state === 'running') audioCtx.suspend(); }
+    else { if(audioCtx && audioCtx.state === 'suspended' && !soundMuted()) audioCtx.resume(); }
+  }catch(e){}
+});
+window.addEventListener('blur', function(){ try{ if(audioCtx && audioCtx.state === 'running') audioCtx.suspend(); }catch(e){} });
+window.addEventListener('focus', function(){ try{ if(audioCtx && audioCtx.state === 'suspended' && !soundMuted()) audioCtx.resume(); }catch(e){} });
+
 // Call this once from a user gesture to unlock iOS audio
 function unlockAudio(){
   if(audioUnlocked) return;
@@ -999,9 +1011,10 @@ function unlockAudio(){
 function playSound(type){
   try {
     if(soundMuted()) return;   // 🔊 muted by the player
+    if(document.hidden) return; // no noise from a background tab, ever (2026-09-19)
     if(!audioCtx) unlockAudio();
     if(!audioCtx) return;
-    if(audioCtx.state === 'suspended') audioCtx.resume();
+    if(audioCtx.state === 'suspended' && !document.hidden) audioCtx.resume();
 
     if(type === 'whack'){
       var osc = audioCtx.createOscillator();
