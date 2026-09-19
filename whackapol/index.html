@@ -524,6 +524,7 @@ body{
   </div>
   <button class="start-btn" id="startBtn">▶&nbsp; PLAY</button>
   <button id="startLbBtn" style="margin-top:12px;padding:8px 22px;border-radius:30px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#8888bb;font-size:0.85rem;cursor:pointer;touch-action:manipulation">🏆 Leaderboard</button>
+  <button id="soundToggleBtn" onclick="wapToggleSound()" style="margin-top:10px;padding:7px 18px;border-radius:30px;border:1px solid rgba(255,255,255,0.10);background:transparent;color:#8888bb;font-size:0.78rem;cursor:pointer;touch-action:manipulation">🔊 Sound: On</button>
 </div>
 
   <!-- Decorative mascots -->
@@ -965,6 +966,21 @@ function updateTimer(){
 let audioCtx = null;
 let audioUnlocked = false;
 
+/* 🔊 Sound on/off (added 2026-09-19, Steve heard blips he did not expect).
+   Persisted per device; the toggle lives on the start screen. */
+function soundMuted(){
+  try{ return localStorage.getItem('wap_sound') === 'off'; }catch(e){ return false; }
+}
+function updateSoundBtn(){
+  var b = document.getElementById('soundToggleBtn');
+  if(b) b.textContent = soundMuted() ? '🔇 Sound: Off' : '🔊 Sound: On';
+}
+function wapToggleSound(){
+  try{ localStorage.setItem('wap_sound', soundMuted() ? 'on' : 'off'); }catch(e){}
+  updateSoundBtn();
+}
+window.wapToggleSound = wapToggleSound;
+
 // Call this once from a user gesture to unlock iOS audio
 function unlockAudio(){
   if(audioUnlocked) return;
@@ -982,6 +998,7 @@ function unlockAudio(){
 
 function playSound(type){
   try {
+    if(soundMuted()) return;   // 🔊 muted by the player
     if(!audioCtx) unlockAudio();
     if(!audioCtx) return;
     if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -1040,10 +1057,20 @@ function playSound(type){
   }
 }
 
+// Reflect the saved sound preference on load
+try{ updateSoundBtn(); }catch(e){}
+
 // ===== GAME LOOP =====
 function startGame(){
   // Init audio on user gesture (required for iOS)
   unlockAudio();
+
+  // Defensive (2026-09-19): kill any timer still alive from a previous round,
+  // so a double-tap on PLAY cannot leave two spawn loops running.
+  try{ clearInterval(state.timerId); }catch(e){}
+  try{ clearInterval(state.spawnTimerId); }catch(e){}
+  state.timerId = null;
+  state.spawnTimerId = null;
 
   // Reset used politicians tracking for new game
   window._usedPols = [];
@@ -1291,7 +1318,8 @@ function showEndScreen(){
     var entries = JSON.parse(localStorage.getItem('wap_lb') || '[]');
     var tw = state ? (state.scores.republican + state.scores.democrat + state.scores.independent) : 0;
     if(tw > 0){
-      entries.push({score:tw, r:rPct, d:dPct, i:iPct, date:new Date().toISOString()});
+      var hname = ''; try{ hname = (localStorage.getItem('wap_handle')||'').trim(); }catch(e){}
+      entries.push({score:tw, r:rPct, d:dPct, i:iPct, name:hname||'You', date:new Date().toISOString()});
       entries.sort(function(a,b){ return b.score - a.score; });
       if(entries.length > 50) entries = entries.slice(0,50);
       localStorage.setItem('wap_lb', JSON.stringify(entries));
@@ -1450,9 +1478,48 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
     var back = id(lbFrom === 'startScreen' ? 'startScreen' : 'endScreen');
     if(back) back.classList.add('active');
   };
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function getHandle(){ try{ return (localStorage.getItem('wap_handle')||'').trim(); }catch(e){ return ''; } }
+  function setHandle(v){ try{ localStorage.setItem('wap_handle', v); }catch(e){} }
+  window.wapChangeHandle = function(){
+    try{ localStorage.removeItem('wap_handle'); }catch(e){}
+    renderLeaderboard();
+  };
   function renderLeaderboard(){
     var el = id('lbContent');
     if(!el) return;
+    /* FIRST-TIME HANDLE GATE (Steve, 2026-09-19): no handle yet → ask for one before showing the board. */
+    if(!getHandle()){
+      var sub0 = id('lbSub');
+      if(sub0) sub0.textContent = 'Choose a handle to appear on the board';
+      el.innerHTML =
+        '<div style="text-align:center;padding-top:6px">' +
+          '<div style="font-size:0.9rem;color:#aaaacc;margin-bottom:10px">What name should the board show?</div>' +
+          '<input id="lbHandleInput" maxlength="16" placeholder="e.g. WhackMaster" autocomplete="off" autocapitalize="words" spellcheck="false" ' +
+          'style="width:100%;max-width:260px;padding:11px 16px;border-radius:24px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e0e0ff;font-size:0.95rem;text-align:center;outline:none">' +
+          '<div><button id="lbHandleSave" style="margin-top:12px;padding:10px 28px;border-radius:24px;border:none;background:linear-gradient(135deg,#6633cc,#9966ff);color:#fff;font-weight:800;font-size:0.85rem;letter-spacing:0.5px;cursor:pointer;touch-action:manipulation">SAVE &amp; SEE BOARD</button></div>' +
+          '<div id="lbHandleErr" style="color:#ff7777;font-size:0.78rem;margin-top:8px;min-height:16px"></div>' +
+        '</div>';
+      var inp = id('lbHandleInput'), sv = id('lbHandleSave'), er = id('lbHandleErr');
+      var submitHandle = function(){
+        var v = (inp.value||'').replace(/[<>]/g,'').trim();
+        if(v.length < 2){ er.textContent = 'Use at least 2 characters'; inp.focus(); return; }
+        v = v.slice(0,16);
+        setHandle(v);
+        /* name the rounds already saved anonymously */
+        try{
+          var es = JSON.parse(localStorage.getItem('wap_lb')||'[]');
+          var changed = false;
+          for(var j=0;j<es.length;j++){ if(!es[j].name || es[j].name==='You'){ es[j].name = v; changed = true; } }
+          if(changed) localStorage.setItem('wap_lb', JSON.stringify(es));
+        }catch(e){}
+        renderLeaderboard();
+      };
+      if(sv) sv.addEventListener('click', submitHandle);
+      if(inp) inp.addEventListener('keydown', function(ev){ if(ev.key === 'Enter'){ ev.preventDefault(); submitHandle(); } });
+      setTimeout(function(){ if(inp) inp.focus(); }, 120);
+      return;
+    }
     try {
       var entries = JSON.parse(localStorage.getItem('wap_lb') || '[]');
       var sub = id('lbSub');
@@ -1470,11 +1537,12 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
         var e = entries[i];
         var rank = i < 3 ? medals[i] : '#'+(i+1);
         h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(255,255,255,0.03);border-radius:8px">';
-        h += '<span style="font-size:0.85rem">'+rank+' <span style="color:#aaaacc">'+e.score+' whacks</span></span>';
+        h += '<span style="font-size:0.85rem">'+rank+' <span style="color:#ddddff;font-weight:700">'+esc(e.name||'You')+'</span> <span style="color:#aaaacc">'+e.score+' whacks</span></span>';
         h += '<span style="font-size:0.75rem;color:#666688">'+e.r+'%/'+e.d+'%/'+e.i+'%</span>';
         h += '</div>';
       }
       h += '</div>';
+      h += '<div style="text-align:center;margin-top:14px"><button onclick="wapChangeHandle()" style="background:transparent;border:none;color:#8888bb;font-size:0.78rem;text-decoration:underline;cursor:pointer;touch-action:manipulation">✏️ Change name</button></div>';
       el.innerHTML = h;
     } catch(e){
       el.innerHTML = '<div style="color:red">Error loading leaderboard</div>';
