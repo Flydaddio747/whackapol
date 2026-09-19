@@ -1109,103 +1109,82 @@ function startGame(){
 
 // ===== ROAST MESSAGES =====
 function getRoastMessage(scores, playerParty){
-  const total = scores.republican + scores.democrat + scores.independent || 1;
-  var rPct = Math.round((scores.republican / total) * 100);
-  var dPct = Math.round((scores.democrat / total) * 100);
-  var iPct = Math.round((scores.independent / total) * 100);
-  // Fix rounding so percentages always sum to 100
-  var pctSum = rPct + dPct + iPct;
-  if(pctSum !== 100 && total > 0){
-    var pctsArr = [[rPct,'r'],[dPct,'d'],[iPct,'i']];
-    pctsArr.sort(function(a,b){ return b[0] - a[0]; });
-    var diff = 100 - pctSum;
-    if(pctsArr[0][1] === 'r') rPct += diff;
-    else if(pctsArr[0][1] === 'd') dPct += diff;
-    else iPct += diff;
-  }
-  
-  // Find dominate party
-  let maxParty = 'republican';
-  let maxPct = rPct;
-  if(dPct > maxPct){ maxParty = 'democrat'; maxPct = dPct; }
-  if(iPct > maxPct){ maxParty = 'independent'; maxPct = iPct; }
-  
-  // Check for ties
-  const parties = ['republican','democrat','independent'];
-  const pcts = [rPct, dPct, iPct];
-  const sorted = [...pcts].sort((a,b) => b-a);
+  // THE PREMISE: the player whacks the politicians who are NOT on their side.
+  // Whacking the opposition = doing your job. Whacking your OWN party = own goal.
+  const r = scores.republican || 0, d = scores.democrat || 0, i = scores.independent || 0;
+  const total = r + d + i || 1;
+  const rPct = Math.round((r / total) * 100);
+  const dPct = Math.round((d / total) * 100);
+  const iPct = Math.round((i / total) * 100);
+  const CNT   = {republican: r, democrat: d, independent: i};
+  const PLURAL= {republican: 'Republicans', democrat: 'Democrats', independent: 'Independents'};
+  const ONES  = {republican: 'Republican', democrat: 'Democrat', independent: 'Independent'};
+  const TICK  = {republican: 'GOP', democrat: 'DEM', independent: 'IND'};
+  const sorted = [r, d, i].slice().sort(function(a,b){ return b - a; });
   const isTie = sorted[0] === sorted[1] && sorted[0] > 0;
-  const whackedAll = scores.republican > 0 && scores.democrat > 0 && scores.independent > 0 && total >= 9;
-  const whackedAllEqual = isTie && whackedAll;
-  
 
-if(whackedAllEqual && total >= 9){
-    return {msg: "Good luck at the ballot box — your vote doesn't count!", sub: "Perfectly balanced, as all things should be. You stand for nothing, you fall for everything.", icon: '⚖️'};
-  }
-  if(isTie && total >= 6){
-    return {msg: "A pox on both their houses!", sub: "You're whacking both sides equally. That's a statement right there.", icon: '🧱'};
-  }
-  
-  // ===== Match with player's stated party =====
-  if(playerParty && playerParty !== 'none'){
-    const selfPct = pcts[parties.indexOf(playerParty)];
-    const otherMax = Math.max(...pcts.filter((_,i) => parties[i] !== playerParty));
-    
-    if(selfPct >= 80 && playerParty === maxParty && selfPct > otherMax * 2){
-      if(playerParty === 'republican' && scores.republican > scores.democrat){
-        return {msg: "Whacking the GOP is your love language!", sub: "You only whacked Republicans. Real opposition, right to the GQP.", icon: '🤝'};
-      }
-      if(playerParty === 'democrat' && scores.democrat > scores.republican){
-        return {msg: "Whacking the GOP is your love language!", sub: "You only whacked Democrats. Why stop now", icon: '🤝'};
-      }
-      if(playerParty === 'independent' && scores.independent > 0){
-        return {msg: "Truly, you march to the beat of your own drum!", sub: "An independent who actually whacked independents. We salute you, maverick.", icon: '🪇'};
-      }
+  // ===== No party claimed =====
+  if(!playerParty || playerParty === 'none'){
+    if(isTie && r > 0 && d > 0 && i > 0 && total >= 9){
+      return {msg: "Good luck at the ballot box — your vote doesn't count!", sub: "Perfectly balanced, as all things should be. You stand for nothing, you fall for everything.", icon: '⚖️'};
     }
-    
-    // Whacked mostly the other party
-    if(otherMax >= 70 && selfPct <= 20 && playerParty !== 'none'){
-      if(playerParty === 'republican' && maxParty === 'democrat'){
-        return {msg: "Whacked mostly Dems but said you were GOP? Hmm", sub: `Said you were Republican, whacked ${scores.democrat} Democrats. The primary challenge is real.`, icon: '👀'};
-      }
-      if(playerParty === 'democrat' && maxParty === 'republican'){
-        return {msg: "Whacked mostly GOP but said you were DEM? Oh dear", sub: `Said you were Democrat, whacked ${scores.republican} Republicans. The working groups are concerned.`, icon: '📋'};
-      }
-      if(maxParty === 'republican'){
-        return {msg: "Have you considered switching teams?", sub: `You said ${playerParty} but your whacks say GOP. We don't make the rules.`, icon: '🔄'};
-      }
-      if(maxParty === 'democrat'){
-        return {msg: "Your whacks are blue, even if your voter registration isn't!", sub: `Actions speak louder than party registration. ${scores.democrat} Democrat whacks.`, icon: '💙'};
-      }
+    if(isTie && total >= 6){
+      return {msg: "A pox on both their houses!", sub: "You're whacking both sides equally. That's a statement right there.", icon: '🧱'};
     }
-    
-    // Did they whack their own party's representatives?
-    const partyPols = {republican:10, democrat:10, independent:2};
-    const selfWhacks = scores[playerParty] || 0;
-    const maxPossible = partyPols[playerParty] || 10;
-    
-    if(playerParty !== 'none' && selfWhacks === 0 && total > 3){
-      return {msg: "You abandoned your party entirely!", sub: `Zero ${playerParty} whacks. The party chair is disappointed.`, icon: '🏃'};
+    if(rPct > 70){
+      return {msg: "You hate the GOP machine!", sub: `${r} Republican whacks. Your <span style="color:#ff6666">red</span> blood runs deep.`, icon: '🔴'};
     }
-    
-    if(playerParty !== 'none' && selfWhacks >= maxPossible){
-      return {msg: "Did you even see anyone else?", sub: `You whacked all ${maxPossible} ${playerParty}s. Maybe look around next time.`, icon: '👁️'};
+    if(dPct > 70){
+      return {msg: "You hate the Democrat machine!", sub: `${d} Democrat whacks. <span style="color:#66bbff">Blue</span> is clearly your color.`, icon: '🔵'};
     }
+    return {msg: "You participated! That's what counts.", sub: `GOP ${r} • DEM ${d} • IND ${i} — democracy in action.`, icon: '🗳️'};
   }
-  
-  // ===== Generic results =====
-  if(maxParty === 'republican' && rPct > 80){
-    return {msg: "You hate the GOP machine!", sub: `${scores.republican} Republican whacks. Your <span style="color:#ff6666">red</span> blood runs deep.`, icon: '🔴'};
+
+  // ===== Independent: no opposition, everyone is fair game =====
+  if(playerParty === 'independent'){
+    const others = total - i;
+    if(total < 4){
+      return {msg: "That was quick.", sub: `Only ${total} whacks. The machines never even noticed you.`, icon: '⏱️'};
+    }
+    if(i > 0 && i >= others){
+      return {msg: "You whacked your OWN independents!", sub: `${i} of your ${total} whacks were independents. You're not the solution, you're the problem.`, icon: '🪘'};
+    }
+    if(i === 0){
+      return {msg: "Chaos with no loyalty — we respect it.", sub: `You whacked ${others} politicians and never touched an independent. Nobody is safe from you.`, icon: '🪘'};
+    }
+    return {msg: "Truly, you march to the beat of your own drum!", sub: `${others} of your ${total} whacks landed on the two big parties. An independent doing independent things.`, icon: '🪘'};
   }
-  if(maxParty === 'democrat' && dPct > 80){
-    return {msg: "You hate the Democrat machine!", sub: `${scores.democrat} Democrat whacks. <span style="color:#66bbff">Blue</span> is clearly your color.`, icon: '🔵'};
+
+  // ===== Partisan player: the opposition is the job, your own side is an own goal =====
+  const own     = CNT[playerParty];
+  const enemy   = total - own;
+  const ownPct  = Math.round((own / total) * 100);
+  const ownName = PLURAL[playerParty];
+  const ownOne  = ONES[playerParty];
+  const others  = ['republican','democrat','independent']
+                    .filter(function(p){ return p !== playerParty; })
+                    .map(function(p){ return {p: p, n: CNT[p]}; })
+                    .filter(function(o){ return o.n > 0; })
+                    .sort(function(a,b){ return b.n - a.n; });
+  const topOther = others[0];
+
+  if(total < 4){
+    return {msg: "That was quick.", sub: `Only ${total} whacks. The machines never even noticed you.`, icon: '⏱️'};
   }
-  if(maxParty === 'independent' && iPct > 50 && total <= 4){
-    return {msg: "Rare breed spotted!", sub: "An independent who actually found the independents. That's commitment.", icon: '🦄'};
+  if(own === 0){
+    const oppTxt = topOther ? (topOther.n + ' ' + PLURAL[topOther.p]) : 'the other side';
+    return {msg: "You did your job!", sub: `You said ${TICK[playerParty]}. ${oppTxt} took the beating and you never once touched a ${ownOne}. Every one of your ${total} whacks landed where it counts.`, icon: '🤝'};
   }
-  
-  // ===== Fallback =====
-  return {msg: "You participated! That's what counts.", sub: `GOP ${scores.republican} • DEM ${scores.democrat} • IND ${scores.independent} — democracy in action.`, icon: '🗳️'};
+  if(ownPct <= 20){
+    return {msg: "Solid work — one slip.", sub: `${enemy} of your ${total} whacks were the opposition. ${own} was your own side. Friendly fire happens.`, icon: '🎯'};
+  }
+  if(own === total){
+    return {msg: "You only whacked your OWN party!", sub: `All ${total} whacks were ${ownName}. You said ${TICK[playerParty]}. Turn around — the enemy is behind you.`, icon: '🙈'};
+  }
+  if(ownPct >= 50){
+    return {msg: "Why are you whacking your OWN people?!", sub: `${own} of your ${total} whacks were ${ownName}, and you claim to be ${TICK[playerParty]}. Somebody check that voter registration.`, icon: '🔁'};
+  }
+  return {msg: "Half opposition, half friendly fire.", sub: `${enemy} against the other side, ${own} against your own ${ownName}. Pick a lane.`, icon: '⚖️'};
 }
 
 function endGame(){
@@ -1268,7 +1247,13 @@ function showEndScreen(){
     const partyNames = {republican:'GOP', democrat:'DEM', independent:'IND', none:'None'};
   const partyQ = playerParty ? partyNames[playerParty] || 'None' : 'Skipped';
   const cntR = s.republican || 0, cntD = s.democrat || 0, cntI = s.independent || 0;
-  breakdownDetail.textContent = `Whacks: ${total}  •  You said: ${partyQ}`;
+  if(playerParty && playerParty !== 'none'){
+    const ownHits   = s[playerParty] || 0;
+    const enemyHits = (s.republican + s.democrat + s.independent) - ownHits;
+    breakdownDetail.textContent = `Whacks: ${total}  •  You said: ${partyQ}  •  👍 Opposition hits: ${enemyHits}  •  👎 Own-goal hits: ${ownHits}`;
+  } else {
+    breakdownDetail.textContent = `Whacks: ${total}  •  You said: ${partyQ}`;
+  }
 
   // Alignment bars — raw whack COUNT to the right of each bar (no % on the bars)
   alignmentBars.innerHTML = `
