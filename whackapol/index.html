@@ -523,8 +523,8 @@ body{
     those other guys
   </div>
   <button class="start-btn" id="startBtn">▶&nbsp; PLAY</button>
-  <button id="startLbBtn" style="margin-top:12px;padding:8px 22px;border-radius:30px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#8888bb;font-size:0.85rem;cursor:pointer;touch-action:manipulation">🏆 Leaderboard</button>
-  <button id="soundToggleBtn" onclick="wapToggleSound()" style="margin-top:10px;padding:7px 18px;border-radius:30px;border:1px solid rgba(255,255,255,0.10);background:transparent;color:#8888bb;font-size:0.78rem;cursor:pointer;touch-action:manipulation">🔊 Sound: On</button>
+  <button id="startLbBtn" style="margin-top:12px;padding:13px 26px;min-height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:30px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#8888bb;font-size:0.85rem;cursor:pointer;touch-action:manipulation">🏆 Leaderboard</button>
+  <button id="soundToggleBtn" onclick="wapToggleSound()" style="margin-top:10px;padding:13px 22px;min-height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:30px;border:1px solid rgba(255,255,255,0.10);background:transparent;color:#8888bb;font-size:0.78rem;cursor:pointer;touch-action:manipulation">🔊 Sound: On</button>
 </div>
 
   <!-- Decorative mascots -->
@@ -1333,6 +1333,7 @@ function showEndScreen(){
     if(tw > 0){
       var hname = ''; try{ hname = (localStorage.getItem('wap_handle')||'').trim(); }catch(e){}
       entries.push({score:tw, r:rPct, d:dPct, i:iPct, name:hname||'You', date:new Date().toISOString()});
+      if(hname && window.wapPostScore){ window.wapPostScore(tw, rPct, dPct, iPct); }
       entries.sort(function(a,b){ return b.score - a.score; });
       if(entries.length > 50) entries = entries.slice(0,50);
       localStorage.setItem('wap_lb', JSON.stringify(entries));
@@ -1492,6 +1493,45 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
     if(back) back.classList.add('active');
   };
   function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  /* ── NATIONAL LEADERBOARD (Cloudflare Worker + KV, built 2026-09-28) ──
+     Public read, rate-limited write. No key, no secret — safe to ship. */
+  var LB_API = 'https://whackapol-leaderboard.flydaddio.workers.dev';
+  function wapPostScore(s, r, d, i){
+    try{
+      var n = getHandle(); if(!n) return;
+      fetch(LB_API + '/score', { method:'POST', headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({ n:n, s:s, r:r, d:d, i:i }) }).catch(function(){});
+    }catch(e){}
+  }
+  window.wapPostScore = wapPostScore;
+  function wapRenderNational(host){
+    var box = document.createElement('div');
+    box.style.marginTop = '18px';
+    var head = '<div style="font-size:0.8rem;letter-spacing:1px;color:#8888bb;margin-bottom:8px">🌎 NATIONAL TOP 10</div>';
+    box.innerHTML = head + '<div style="color:#666688;font-size:0.85rem;text-align:center;padding:10px">Loading…</div>';
+    host.appendChild(box);
+    var done = function(html){ box.innerHTML = head + html; };
+    try{
+      fetch(LB_API + '/top?limit=10').then(function(r){ return r.json(); }).then(function(j){
+        var b = (j && j.board) || [];
+        if(!b.length){ done('<div style="color:#666688;font-size:0.85rem;text-align:center;padding:10px">No national scores yet — yours would be first.</div>'); return; }
+        var medals = ['🥇','🥈','🥉'];
+        var me = (getHandle()||'').toLowerCase();
+        var h = '<div style="display:flex;flex-direction:column;gap:4px">';
+        for(var i=0;i<b.length;i++){
+          var e = b[i];
+          var rank = i<3 ? medals[i] : '#'+(i+1);
+          var mine = (e.n||'').toLowerCase() === me;
+          h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:'+(mine?'rgba(153,102,255,0.18)':'rgba(255,255,255,0.03)')+';border-radius:8px">';
+          h += '<span style="font-size:0.85rem">'+rank+' <span style="color:#ddddff;font-weight:700">'+esc(e.n)+'</span> <span style="color:#aaaacc">'+e.s+' whacks</span></span>';
+          h += '<span style="font-size:0.75rem;color:#666688">'+e.r+'%/'+e.d+'%/'+e.i+'%</span>';
+          h += '</div>';
+        }
+        h += '</div>';
+        done(h);
+      }).catch(function(){ if(box.parentNode) box.parentNode.removeChild(box); });
+    }catch(e){ if(box.parentNode) box.parentNode.removeChild(box); }
+  }
   function getHandle(){ try{ return (localStorage.getItem('wap_handle')||'').trim(); }catch(e){ return ''; } }
   function setHandle(v){ try{ localStorage.setItem('wap_handle', v); }catch(e){} }
   window.wapChangeHandle = function(){
@@ -1540,7 +1580,8 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
         ? (entries.length === 1 ? 'Your best round on this device' : 'Your top ' + Math.min(10, entries.length) + ' of ' + entries.length + ' rounds on this device')
         : 'Your top 10 rounds on this device';
       if(!entries.length){
-        el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px">No rounds recorded yet — finish a round and your score lands here.</div>';
+        el.innerHTML = '<div style="text-align:center;color:#8888bb;font-size:0.9rem;padding:20px 10px 4px">No rounds on this device yet — finish a round and your score lands here.</div>';
+        wapRenderNational(el);
         return;
       }
       entries.sort(function(a,b){ return b.score - a.score; });
@@ -1557,6 +1598,7 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
       h += '</div>';
       h += '<div style="text-align:center;margin-top:14px"><button onclick="wapChangeHandle()" style="background:transparent;border:none;color:#8888bb;font-size:0.78rem;text-decoration:underline;cursor:pointer;touch-action:manipulation">✏️ Change name</button></div>';
       el.innerHTML = h;
+      wapRenderNational(el);
     } catch(e){
       el.innerHTML = '<div style="color:red">Error loading leaderboard</div>';
     }
@@ -1580,14 +1622,15 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
   'use strict';
 
   /* ── CONFIG ────────────────────────────────────────────────────────────
-     MailerLite subscriber POST (spec §POST Contract).
-     Both keys are EMPTY until Steve creates the MailerLite account and
-     fills them in. While empty, the POST is skipped (console warning) and
-     the player is never blocked. NEVER commit a real API key to source. */
-  const MAILERLITE_API_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0IiwianRpIjoiM2ZkM2FiNDkxNWVlZGQ4YjdhMmEzNjYyM2M4YmU2YjQ5ZTJhZWI2ODYxNWY4OGU3MWFkN2YwNzI5YjliNWMzZGMwNzBlNzRjN2QyZDRmNDYiLCJpYXQiOjE3ODcxMTc0MzguMDE1NjUzLCJuYmYiOjE3ODcxMTc0MzguMDE1NjU1LCJleHAiOjQ5NDI3OTEwMzguMDEwNDU1LCJzdWIiOiIyNTk1OTIyIiwic2NvcGVzIjpbXX0.wTo6tZ84HLftJTMEF9M2MW282sGe0I1DoQ1ej5DgwOgw7gwaHz1kmJKzfL4-KNjphLOBHhLYGCAYnznmsXsMJrXPIsoCRrgDRzG7_BFJtYdDLIar_l7RCOGORK1laGHDg3prjTwmdXr1eSkRMpV5HqfKwui9wv7W0vTC98xsxi-J6f_CgfvI6Xw1aw4N3wmfBuTM_P5usYyORck_K-qIvr80X-XzwHlYc7hy1vhlgj7f0HS6k2ch0dCOvpBa61cVphdLF6-RMwNaxuq-9RWDWmReqOvZl5-Dg08-YELuY_4HrGGXqSmR38PneArCr6B7vRY6YvBoTBUZcHEzKmvz8iju99PLjLHAONewiFLVmldgY9Qctqo7JSDdtRegafTIoLL55SuFyp0NftH6zqE7YRPYkxzxGqhDwXKbSDI7_lin3ddKVLW0Sx6_QEz5BfqzNSN_Z_g62FKYTVRcwHG-ZmsiPFM6ZhQGyDKaAXT4avjKCwS5olVAMXYSszJIYcAToT0JJBUa98jQIdQ-NJN0Ltff_5cz4zwZV_xd-leu55y0rkamXgFTGQRERVpjuU38jiA1E7ldfRdo-K8JfrMNny_hMWZZ5ScGhEmvjpcre3EFB_UzkHM8qBrapN54iYBW4G2WaSXErmUlXoITeUQdWMmjFy4uZ-9BvBaDREdSgRE'; // wired from mailerlite_token.txt (verified live 2026-09-19)
-  const MAILERLITE_GROUP_ID = '';
-  const MAILERLITE_ENDPOINT = 'https://connect.mailerlite.com/api/subscribers'; // API v3
-  const MAILERLITE_TAGS     = ['whackapol_capture']; // tag per funnel plan
+     MailerLite subscriber POST via the PUBLIC embedded-form endpoint.
+     NO API KEY: only the account and form ids, which MailerLite prints in
+     its own embed snippet and are public by design. Nothing secret ships
+     in this page. */
+  const MAILERLITE_ACCOUNT_ID = '2577678';
+  const MAILERLITE_FORM_ID    = '199870089799927352';
+  const MAILERLITE_ENDPOINT   = 'https://assets.mailerlite.com/jsonp/' +
+                                MAILERLITE_ACCOUNT_ID + '/forms/' +
+                                MAILERLITE_FORM_ID + '/subscribe';
 
   var EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;  // spec regex
   var LS_EMAIL      = 'whackapol_email';        // "email" | "skipped" | null
@@ -1671,7 +1714,7 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
     '#wapEmailSkip{' +
       'display:inline-block;margin-top:16px;font-size:13px;color:#6a6a96;' +
       'text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,0.15);' +
-      'cursor:pointer;background:none;border:none;padding:6px 12px;' +
+      'cursor:pointer;background:none;border:none;padding:12px 18px;min-height:44px;' +
       'touch-action:manipulation;-webkit-appearance:none;appearance:none;' +
     '}' +
     '#wapEmailSkip:hover{color:#8a8ab8}' +
@@ -1712,31 +1755,30 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
      localStorage `whackapol_email_pending` and flushed on next app open. */
   function submitEmail(email){
     return new Promise(function(resolve){
-      if(!MAILERLITE_API_KEY){
-        console.warn('[Whack-a-Pol] MAILERLITE_API_KEY not configured — skipping POST. ' +
+      if(!MAILERLITE_FORM_ID){
+        console.warn('[Whack-a-Pol] MailerLite form not configured — skipping POST. ' +
                      'Player email captured locally: ' + email);
         return resolve(true);
       }
-      var payload = {
-        email: email,
-        fields: { source: 'whackapol', alignment_report: 'pending' }
-      };
-      if(MAILERLITE_GROUP_ID) payload.groups = [MAILERLITE_GROUP_ID];
-      if(MAILERLITE_TAGS && MAILERLITE_TAGS.length) payload.tags = MAILERLITE_TAGS.slice();
+      /* Public form endpoint takes form-encoded fields — a "simple" request,
+         so the browser sends no preflight. No credentials of any kind. */
+      var payload = 'fields[email]=' + encodeURIComponent(email) +
+                    '&fields[source]=whackapol' +
+                    '&fields[alignment_report]=pending' +
+                    '&ml-submit=1';
 
       function attempt(){
         return new Promise(function(res){
           var xhr = new XMLHttpRequest();
           xhr.open('POST', MAILERLITE_ENDPOINT, true); // async — never block the player
-          xhr.setRequestHeader('Authorization', 'Bearer ' + MAILERLITE_API_KEY);
-          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
           xhr.timeout = 8000;
           xhr.onreadystatechange = function(){
             if(xhr.readyState === 4) res(xhr.status >= 200 && xhr.status < 300);
           };
           xhr.onerror = function(){ res(false); };
           xhr.ontimeout = function(){ res(false); };
-          try{ xhr.send(JSON.stringify(payload)); }catch(e){ res(false); }
+          try{ xhr.send(payload); }catch(e){ res(false); }
         });
       }
 
@@ -1769,7 +1811,7 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
     var pending = null;
     try{ pending = localStorage.getItem(LS_PENDING); }catch(e){}
     if(!pending) return;
-    if(!MAILERLITE_API_KEY) return; // nothing real to send yet
+    if(!MAILERLITE_FORM_ID) return; // nothing real to send yet
     console.log('[Whack-a-Pol] Flushing pending email: ' + pending);
     submitEmail(pending);
   }
