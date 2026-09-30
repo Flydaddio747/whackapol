@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  WALK-THE-PLANK — PIRATE STORY VERSION (single-file mobile web game)
+  Steve Haggerty's narrative (Aug 21 2026): pirate walks the plank, blindfold
+  slipped so he can peek; party planks (Republican / Independent / Democrat /
+  Communist) pass by one at a time to read and grab; time per plank gets
+  shorter and shorter; grab 5 planks → build a raft and sail to safety;
+  miss → sink with just a hand above water (middle-finger gag).
+  Animations: opening scene + falling/sailing ending.
+  Rebuilt Sep 9 2026 · replaces the Aug 4 "alignment roast" version
+  (backup: delivery/_backup_walktheplank_20260909_pirate.html)
+
+  VERIFICATION HEADER:
+  1. Single file, zero external dependencies (no external script/link/img
+     src; no @import; no fetch/XHR). All art = HTML/CSS/emoji.
+  2. All 65 planks embedded verbatim from delivery/happy_walktheplank_planks.md
+     §4 (R01–R25, D01–D25, I01–I15) + 6 original Communist gag planks.
+  3. JS parses cleanly — node --check verified at build time.
+  4. In-file self-test runSelfTest() passes and logs to console.
+  5. Mobile-first: viewport meta, ≥44px touch targets, no hover-only
+     interactions, portrait-friendly, legible at 375px width.
+  6. No real politician names/faces. Neutral-but-fun plank wording.
+  7. Ad/IAP slots are placeholder comments ONLY (Happy rule: no ad code
+     without Steve's explicit approval).
+  ═══════════════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b1130">
+<title>Walk-the-Plank 🏴‍☠️ — Grab 5 planks, build a raft, sail away</title>
+<meta name="description" content="Walk-the-Plank — the party-plank gauntlet. Grab YOUR party's planks as they float by, build a raft, and sail to freedom before the sharks get you.">
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  background:#0b1130;
+  color:#fff7ea;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-text-size-adjust:100%;
+  touch-action:manipulation;
+  overflow-x:hidden;
+  overscroll-behavior-y:none;
+}
+#app{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;position:relative}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+.screen{display:none;width:100%;max-width:520px;flex-direction:column;align-items:center;position:relative;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.screen.active{display:flex;animation:screenIn .35s ease-out}
+@keyframes screenIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   AMBIENT SKY (static starfield — no assets)
+   ============================================================ */
+#app::before{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,.7) 0 1px, transparent 2px),
+    radial-gradient(1.5px 1.5px at 24% 9%, rgba(255,255,255,.5) 0 1.5px, transparent 2.5px),
+    radial-gradient(1px 1px at 38% 22%, rgba(255,255,255,.6) 0 1px, transparent 2px),
+    radial-gradient(1px 1px at 55% 12%, rgba(255,255,255,.5) 0 1px, transparent 2px),
+    radial-gradient(1.5px 1.5px at 68% 20%, rgba(255,255,255,.6) 0 1.5px, transparent 2.5px),
+    radial-gradient(1px 1px at 82% 9%, rgba(255,255,255,.5) 0 1px, transparent 2px),
+    radial-gradient(1px 1px at 92% 17%, rgba(255,255,255,.65) 0 1px, transparent 2px),
+    radial-gradient(1px 1px at 8% 34%, rgba(255,255,255,.35) 0 1px, transparent 2px),
+    radial-gradient(1px 1px at 48% 33%, rgba(255,255,255,.35) 0 1px, transparent 2px),
+    radial-gradient(1px 1px at 74% 36%, rgba(255,255,255,.3) 0 1px, transparent 2px),
+    linear-gradient(180deg,#0b1130 0%,#101a3f 45%,#14264f 100%);
+}
+
+/* ============================================================
+   OPENING SCREEN
+   ============================================================ */
+#screenOpen{padding-top:14px;min-height:100vh;min-height:100dvh;justify-content:flex-start}
+.title-wrap{text-align:center;padding:8px 14px 0;position:relative;z-index:5}
+.title{
+  font-size:clamp(34px,9.5vw,52px);font-weight:900;letter-spacing:1px;line-height:1.05;
+  background:linear-gradient(180deg,#ffe9b0,#ffb347 55%,#e07a1a);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 3px 0 rgba(0,0,0,.45));
+  text-shadow:none;
+}
+.title .skull{font-size:.78em;vertical-align:.08em}
+.subtitle{font-size:clamp(13px,3.6vw,16px);color:#cdd7f5;margin-top:6px;padding:0 20px;line-height:1.4;font-style:italic}
+.tagline{font-size:clamp(12px,3.3vw,14px);color:#ffd166;margin-top:6px;font-weight:700;letter-spacing:.5px}
+
+/* — opening art scene — */
+.open-scene{
+  position:relative;width:100%;max-width:520px;height:clamp(240px,46vh,360px);
+  margin:10px 0 4px;overflow:hidden;border-radius:18px;
+  border:2px solid rgba(255,209,102,.25);
+  box-shadow:0 8px 30px rgba(0,0,0,.5), inset 0 0 60px rgba(20,30,80,.6);
+  background:linear-gradient(180deg,#0b1130 0%,#15264d 55%,#1b3560 78%,#0c3a63 100%);
+}
+.moon{position:absolute;top:8%;right:9%;width:clamp(38px,10vw,54px);height:clamp(38px,10vw,54px);border-radius:50%;background:radial-gradient(circle at 38% 34%,#fffbe8,#ffe9a8 60%,#f2c94c);box-shadow:0 0 34px 10px rgba(255,233,168,.35);z-index:1}
+.stars2{position:absolute;inset:0;z-index:0;pointer-events:none;background:
+  radial-gradient(1px 1px at 20% 12%,#fff 0 1px,transparent 2px),
+  radial-gradient(1px 1px at 33% 6%,#fff 0 1px,transparent 2px),
+  radial-gradient(1.5px 1.5px at 45% 14%,#fff 0 1.5px,transparent 2.5px),
+  radial-gradient(1px 1px at 60% 8%,#fff 0 1px,transparent 2px),
+  radial-gradient(1px 1px at 71% 16%,#fff 0 1px,transparent 2px),
+  radial-gradient(1.5px 1.5px at 85% 10%,#fff 0 1.5px,transparent 2.5px),
+  radial-gradient(1px 1px at 14% 26%,rgba(255,255,255,.6) 0 1px,transparent 2px),
+  radial-gradient(1px 1px at 55% 24%,rgba(255,255,255,.6) 0 1px,transparent 2px),
+  radial-gradient(1px 1px at 90% 27%,rgba(255,255,255,.5) 0 1px,transparent 2px);}
+
+/* sea (shared) */
+.sea{position:absolute;left:0;right:0;bottom:0;height:26%;background:linear-gradient(180deg,#07517f 0%,#05406a 45%,#032c4e 100%);z-index:3}
+.sea::before{content:'';position:absolute;top:-7px;left:-40px;right:-40px;height:14px;background:radial-gradient(circle at 16px 14px,#0a6ca6 0 9px,transparent 10px);background-size:64px 14px;animation:waveDrift 7s linear infinite;opacity:.9}
+.sea::after{content:'';position:absolute;top:-2px;left:-40px;right:-40px;height:10px;background:radial-gradient(circle at 9px 10px,rgba(150,225,255,.55) 0 5px,transparent 6px);background-size:36px 10px;animation:waveDrift2 4.5s linear infinite;opacity:.7}
+@keyframes waveDrift{from{background-position-x:0}to{background-position-x:64px}}
+@keyframes waveDrift2{from{background-position-x:0}to{background-position-x:-36px}}
+
+/* — wooden ship (pure CSS) — */
+.ship{position:absolute;left:-1%;bottom:calc(26% - 6px);width:52%;height:44%;z-index:4}
+.ship .hull{
+  position:absolute;left:0;bottom:0;width:100%;height:62%;
+  background:repeating-linear-gradient(0deg,#6b421f 0 10px,#5a3517 10px 11px),linear-gradient(180deg,#7a4a21,#4e2c10);
+  border:2px solid #33200c;border-radius:10px 14px 46% 40%/10px 14px 100% 92%;
+  box-shadow:inset 0 6px 0 rgba(255,255,255,.08), inset 0 -10px 18px rgba(0,0,0,.4);
+}
+.ship .hull::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;background:rgba(255,255,255,.1)}
+.ship .hull::after{content:'';position:absolute;bottom:8%;right:8%;width:14%;height:12%;border-radius:50%;background:radial-gradient(circle at 40% 35%,#3a2512,#241505);border:2px solid #3a2512}
+.ship .mast{position:absolute;background:linear-gradient(90deg,#5a3517,#8a5a2b 40%,#5a3517);border-radius:3px;z-index:1}
+.ship .m1{left:16%;bottom:60%;width:5px;height:62%}
+.ship .m2{left:47%;bottom:60%;width:6px;height:78%}
+.ship .sail{
+  position:absolute;z-index:2;background:linear-gradient(135deg,#f7eeda,#e6d5b0);
+  border-radius:14% 14% 50% 50%/18% 18% 30% 30%;
+  box-shadow:inset -4px -3px 0 rgba(160,130,80,.25);opacity:.96;
+}
+.ship .s1{left:2%;bottom:74%;width:44%;height:34%}
+.ship .s2{left:34%;bottom:86%;width:56%;height:44%}
+.ship .flag{position:absolute;left:46%;bottom:96%;font-size:15px;line-height:1;z-index:3;animation:flagWave 2.4s ease-in-out infinite;transform-origin:left center}
+@keyframes flagWave{0%,100%{transform:rotate(2deg)}50%{transform:rotate(-4deg)}}
+.ship .parrot{position:absolute;right:2%;bottom:64%;font-size:16px;z-index:4;animation:parrotBob 1.6s ease-in-out infinite}
+@keyframes parrotBob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-3px) rotate(5deg)}}
+
+/* the plank */
+.wtp-plank{
+  position:absolute;height:9px;z-index:5;
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,.12) 0 2px,transparent 2px 34px),linear-gradient(180deg,#8a552a,#5a3013 70%,#3f2208);
+  border-radius:4px;box-shadow:0 2px 3px rgba(0,0,0,.5);
+}
+.open-scene .wtp-plank{left:36%;right:3%;bottom:calc(26% + 24%)}
+.rope{position:absolute;width:3px;background:#5a4322;border-radius:2px;z-index:6}
+.open-scene .rope.r1{left:36%;bottom:calc(50% + 9px);height:22px}
+.open-scene .rope.r2{left:37.5%;bottom:calc(50% + 9px);height:15px;transform:rotate(8deg);transform-origin:top}
+
+/* — CSS pirate figure — */
+.fig{position:absolute;width:36px;height:66px;z-index:7}
+.fig .head{position:absolute;top:0;left:50%;transform:translateX(-50%);width:32px;height:28px;background:#f2c48d;border-radius:50% 50% 44% 44%;z-index:3}
+.fig .band{position:absolute;top:1px;left:50%;transform:translateX(-50%);width:38px;height:10px;background:#c1121f;border-radius:4px;z-index:4}
+.fig .band::after{content:'';position:absolute;right:-9px;top:0;width:12px;height:5px;background:#c1121f;border-radius:2px;transform:rotate(-14deg)}
+.fig .blind{position:absolute;left:50%;width:38px;height:8px;background:#171717;border-radius:4px;z-index:6;box-shadow:0 1px 2px rgba(0,0,0,.5)}
+.fig .blind.on{top:12px;transform:translateX(-50%) rotate(0deg)}
+.fig .blind.off{top:6px;transform:translateX(-50%) rotate(-15deg) translateX(3px) translateY(-2px)}
+.fig .eye{position:absolute;top:14px;width:7px;height:8px;background:#fff;border-radius:50%;z-index:2;box-shadow:inset 0 -1px 1px rgba(0,0,0,.15)}
+.fig .eye::after{content:'';position:absolute;top:2px;left:2.4px;width:2.6px;height:3.4px;background:#1a1a1a;border-radius:50%}
+.fig .eye.l{left:6px}
+.fig .eye.r{right:6px}
+.fig .brow{display:none}
+.fig.peek .eye{height:10px;top:13px}
+.fig.peek .eye::after{width:3.2px;height:4.4px;top:2.6px;left:1.8px}
+.fig .body{position:absolute;top:29px;left:50%;transform:translateX(-50%);width:30px;height:23px;border-radius:7px 7px 3px 3px;z-index:2;
+  background:repeating-linear-gradient(0deg,#efe6d8 0 5px,#d62828 5px 10px);box-shadow:inset 0 -3px 4px rgba(0,0,0,.25)}
+.fig .arm{position:absolute;top:33px;width:8px;height:18px;background:#f2c48d;border-radius:5px;z-index:1}
+.fig .arm.l{left:-4px;transform:rotate(20deg);transform-origin:top center}
+.fig .arm.r{right:-4px;transform:rotate(-20deg);transform-origin:top center}
+.fig .leg{position:absolute;top:52px;width:9px;height:14px;background:#2c2418;border-radius:0 0 4px 4px;z-index:1}
+.fig .leg.l{left:5px}
+.fig .leg.r{right:5px}
+.fig.wave .arm.r{animation:armWave .45s ease-in-out infinite alternate}
+@keyframes armWave{from{transform:rotate(-30deg)}to{transform:rotate(-115deg)}}
+.fig.wobble{animation:pirateWobble .55s ease-in-out}
+@keyframes pirateWobble{0%,100%{transform:rotate(0)}15%{transform:rotate(-9deg) translateY(-2px)}30%{transform:rotate(7deg)}45%{transform:rotate(-6deg)}60%{transform:rotate(4deg)}75%{transform:rotate(-2deg)}}
+.fig.hop{animation:pirateHop .5s ease-out}
+@keyframes pirateHop{0%{transform:translateY(0)}35%{transform:translateY(-14px) rotate(-4deg)}70%{transform:translateY(0)}100%{transform:none}}
+.fig .shiver{display:none}
+
+/* captain variant (guard) */
+.fig.captain .body{background:repeating-linear-gradient(0deg,#2f3e63 0 6px,#1d2740 6px 7px)}
+.fig.captain .band{display:none}
+.fig.captain .hat{position:absolute;top:-9px;left:50%;transform:translateX(-50%);width:44px;height:16px;background:linear-gradient(180deg,#232323,#0c0c0c);border-radius:50% 50% 8px 8px/70% 70% 8px 8px;z-index:5}
+.fig.captain .hat::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:34px;height:4px;background:#0c0c0c;border-radius:2px}
+.fig.captain .blind{display:none}
+.fig.captain .eye{background:#fff}
+
+/* figure placement */
+.figwrap{position:absolute;z-index:7}
+.open-scene .captive{right:4%;bottom:calc(50% + 9px)}
+.open-scene .guard{left:9%;bottom:calc(26% + 15%)}
+.open-scene .fig{position:static}
+.open-scene .captive .fig{transform:scale(1.12);transform-origin:bottom center}
+.open-scene .guard .fig{transform:scale(1.25);transform-origin:bottom center}
+.open-scene .guard{animation:guardLean 3s ease-in-out infinite;transform-origin:bottom center}
+@keyframes guardLean{0%,100%{transform:rotate(0)}50%{transform:rotate(1.6deg)}}
+.bubble{
+  position:absolute;background:#fffbe8;color:#3a2a12;font-size:11px;font-weight:700;
+  padding:5px 9px;border-radius:12px 12px 12px 3px;box-shadow:0 2px 6px rgba(0,0,0,.35);
+  white-space:nowrap;z-index:9;
+}
+.open-scene .figwrap .bubble{left:50%;transform:translateX(-50%);top:auto;bottom:calc(100% + 3px);white-space:normal;width:max-content;max-width:150px;text-align:center;font-size:11px;line-height:1.3}
+.open-scene .figwrap.guard .bubble{transform:translateX(-50%) rotate(-2deg)}
+.open-scene .figwrap.captive .bubble{animation:bubbleFloat 2.2s ease-in-out infinite}
+@keyframes bubbleFloat{0%,100%{transform:translateY(0) rotate(2deg)}50%{transform:translateY(-4px) rotate(2deg)}}
+.bubble::after{content:'';position:absolute;bottom:-6px;left:14px;width:0;height:0;border:7px solid transparent;border-top-color:#fffbe8;border-bottom:0}
+
+/* opening caption band */
+.caption-band{
+  position:relative;z-index:8;text-align:center;font-size:clamp(13px,3.7vw,16px);
+  color:#ffe9b0;font-weight:700;padding:8px 18px;line-height:1.45;
+  background:rgba(10,14,40,.55);border-radius:14px;margin:8px auto 0;max-width:92%;
+}
+.caption-band b{color:#ffd166}
+
+/* open buttons */
+.open-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px;padding:16px 24px 8px;align-items:stretch}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  min-height:56px;padding:12px 18px;border:none;border-radius:16px;
+  font-family:inherit;font-size:18px;font-weight:800;letter-spacing:.8px;
+  color:#fff;cursor:pointer;touch-action:manipulation;
+  transition:transform .08s ease, box-shadow .15s ease, filter .15s ease;
+  box-shadow:0 4px 0 rgba(0,0,0,.35), 0 8px 18px rgba(0,0,0,.3);
+  user-select:none;-webkit-user-select:none;
+}
+.btn:active{transform:translateY(3px) scale(.99);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.btn-primary{background:linear-gradient(180deg,#ffb347,#e07a1a);color:#2a1502;font-size:21px}
+.btn-ghost{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.35);box-shadow:none;font-size:15px;color:#fff}
+.btn-ghost:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;pointer-events:none}
+
+/* watermark */
+.wm{text-align:center;font-size:12px;color:rgba(205,215,245,.75);letter-spacing:1.5px;padding:0 0 6px}
+.wm a{color:rgba(205,215,245,.85);text-decoration:none;font-weight:700;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 12px;border-radius:10px}
+.wm a:active{opacity:.6}
+
+/* ============================================================
+   IDENTITY PICK SCREEN
+   ============================================================ */
+#screenPick{min-height:100vh;min-height:100dvh;justify-content:center;padding:20px 18px}
+.pick-head{text-align:center;margin-bottom:6px}
+.pick-head .kicker{font-size:13px;color:#8fa3d9;letter-spacing:2px;font-weight:800}
+.pick-head h2{font-size:clamp(24px,7vw,32px);margin-top:4px;color:#ffe9b0;line-height:1.15}
+.pick-head p{font-size:14px;color:#cdd7f5;margin-top:6px;padding:0 10px;line-height:1.45}
+.pick-cards{display:flex;flex-direction:column;gap:14px;width:100%;max-width:400px;margin-top:18px}
+.pick-card{
+  display:flex;align-items:center;gap:14px;width:100%;min-height:88px;
+  padding:14px 18px;border-radius:18px;cursor:pointer;touch-action:manipulation;
+  border:3px solid transparent;color:#fff;text-align:left;font-family:inherit;
+  transition:transform .08s ease;box-shadow:0 5px 0 rgba(0,0,0,.3), 0 10px 22px rgba(0,0,0,.3);
+}
+.pick-card:active{transform:translateY(4px) scale(.99);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+.pick-card .pc-emoji{font-size:44px;line-height:1;min-width:58px;text-align:center;filter:drop-shadow(0 3px 3px rgba(0,0,0,.4))}
+.pick-card .pc-name{font-size:clamp(18px,5.4vw,22px);font-weight:900;letter-spacing:.6px;line-height:1.1}
+.pick-card .pc-sub{font-size:12px;opacity:.85;margin-top:3px;line-height:1.3}
+.pick-card.pick-R{background:linear-gradient(135deg,#a4161a,#d62828)}
+.pick-card.pick-D{background:linear-gradient(135deg,#1d4ed8,#3a86ff)}
+.pick-card.pick-I{background:linear-gradient(135deg,#5a189a,#9d4edd)}
+.pick-back{align-self:flex-start;margin-top:18px;background:none;border:none;color:#8fa3d9;font-size:14px;font-family:inherit;min-height:44px;padding:10px 4px;cursor:pointer;font-weight:700}
+
+/* ============================================================
+   GAME SCREEN
+   ============================================================ */
+#screenGame{padding-top:6px}
+.hud{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  width:100%;max-width:520px;padding:6px 10px 4px;font-size:13px;font-weight:800;
+}
+.hud-chip{
+  display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(255,255,255,.18);border-radius:999px;
+  padding:7px 12px;min-height:36px;white-space:nowrap;
+}
+.hud-chip .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.dot.R{background:#ff5a5a}.dot.D{background:#5aa2ff}.dot.I{background:#c77dff}
+#hudRaft{color:#ffd166}
+#raftCount{font-size:16px}
+.strike-dots{display:inline-flex;gap:3px}
+.strike-dots i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.16);display:inline-block;transition:background .3s}
+.strike-dots i.hit{background:#ff4d4d;box-shadow:0 0 8px rgba(255,77,77,.8)}
+
+/* scene */
+.scene{
+  position:relative;width:100%;max-width:520px;height:clamp(205px,34vh,275px);
+  margin-top:6px;overflow:hidden;border-radius:16px;
+  border:2px solid rgba(255,209,102,.22);
+  background:linear-gradient(180deg,#0b1130 0%,#15264d 52%,#1b3560 74%,#0c3a63 100%);
+  box-shadow:0 8px 26px rgba(0,0,0,.45), inset 0 0 50px rgba(20,30,80,.55);
+}
+/* in-game ship: smaller, sails left open */
+#sceneGame .ship{width:40%;height:36%;left:-1%;bottom:calc(26% - 5px)}
+#sceneGame .ship .mast.m1{left:18%;bottom:58%;height:56%}
+#sceneGame .ship .mast.m2{left:52%;bottom:58%;height:74%}
+#sceneGame .ship .s1{left:6%;bottom:70%;width:40%;height:30%}
+#sceneGame .ship .s2{left:40%;bottom:82%;width:50%;height:38%}
+#sceneGame .ship .flag{left:52%;bottom:94%}
+#sceneGame .ship .parrot{right:-2%;bottom:62%}
+#sceneGame .wtp-plank{left:30%;right:6%;bottom:calc(26% + 20%)}
+#sceneGame .rope.r1{left:30%;bottom:calc(46% + 9px);height:20px}
+#sceneGame .rope.r2{left:31.5%;bottom:calc(46% + 9px);height:13px;transform:rotate(9deg);transform-origin:top}
+#sceneGame .captain-pos{left:4%;bottom:calc(26% + 17%)}
+#sceneGame .fig{position:static}
+#sceneGame .captain-pos .fig{transform:scale(1.14);transform-origin:bottom center}
+#sceneGame .captain-pos .fig .arm.r{animation:guardPoint 1.6s ease-in-out infinite}
+@keyframes guardPoint{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(-62deg)}}
+/* in-game pirate stands at plank end */
+#pirateWrap{right:5%;bottom:calc(46% + 9px);z-index:8;transform:scale(.82);transform-origin:bottom center;transition:bottom .2s}
+#pirateWrap .fig{position:static;display:block}
+.peek-flag{
+  position:absolute;top:-19px;left:50%;transform:translateX(-50%);
+  font-size:17px;line-height:1;display:none;z-index:9;animation:peekPop .5s ease-out;
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.5));
+}
+.peek-flag.show{display:block}
+@keyframes peekPop{from{transform:translateX(-50%) scale(0)}to{transform:translateX(-50%) scale(1)}}
+#pirateBubble{
+  position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#fffbe8;color:#3a2a12;font-size:12px;font-weight:800;padding:5px 10px;
+  border-radius:12px 12px 12px 3px;white-space:nowrap;display:none;z-index:9;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+#pirateBubble.show{display:block;animation:bubbleFloat 2.4s ease-in-out infinite}
+
+/* raft dock (grows under plank end) */
+.raft{
+  position:absolute;z-index:6;bottom:calc(26% - 4px);left:74%;display:flex;
+  align-items:flex-end;transform-origin:bottom center;
+}
+.raft .rb{
+  width:13px;height:30px;margin-left:-3px;
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,.15) 0 2px,transparent 2px 6px),linear-gradient(180deg,#8a552a,#5a3013 75%,#3a2208);
+  border:1.5px solid #2f1a06;border-radius:3px;
+  animation:rbPop .35s ease-out;
+}
+@keyframes rbPop{from{transform:scale(.2) translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.raft .mast{position:absolute;left:50%;transform:translateX(-50%);bottom:26px;width:4px;height:46px;background:#5a3517;border-radius:2px;display:none}
+.raft .sail{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:72px;width:0;height:0;display:none;
+  border-left:17px solid transparent;border-right:17px solid transparent;border-bottom:38px solid #f7eeda;
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.3));
+}
+.raft.sailing{animation:raftSail 2.6s ease-in forwards}
+.raft.sailing .mast{display:block}
+.raft.sailing .sail{display:block;animation:sailGrow .5s ease-out .15s both}
+@keyframes sailGrow{from{transform:translateX(-50%) scaleY(0)}to{transform:translateX(-50%) scaleY(1)}}
+@keyframes raftSail{
+  0%{transform:translateX(0) rotate(0)}
+  10%{transform:translateX(6px) rotate(2deg)}
+  25%{transform:translateX(30px) rotate(-2deg)}
+  55%{transform:translateX(130px) rotate(2.5deg)}
+  80%{transform:translateX(240px) rotate(-2deg)}
+  100%{transform:translateX(560px) rotate(3deg)}
+}
+#sailPirate{display:none;position:absolute;left:50%;bottom:22px;transform:translateX(-50%) scale(.92);z-index:7;transform-origin:bottom center}
+
+/* shark */
+.shark{
+  position:absolute;bottom:calc(26% - 6px);left:-60px;font-size:34px;line-height:1;
+  z-index:5;opacity:0;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));transform:scaleX(-1);
+}
+.shark.run{opacity:1;animation:sharkDash 1.5s ease-in-out}
+@keyframes sharkDash{
+  0%{left:-60px;transform:scaleX(-1) translateY(0)}
+  20%{transform:scaleX(-1) translateY(-8px)}
+  40%{transform:scaleX(-1) translateY(0)}
+  60%{transform:scaleX(-1) translateY(-10px)}
+  80%{transform:scaleX(-1) translateY(0)}
+  100%{left:110%;transform:scaleX(-1) translateY(-4px)}
+}
+
+/* splash + hand gag */
+.splash{position:absolute;z-index:10;display:none;font-size:34px;line-height:1;pointer-events:none}
+.splash.show{display:block;animation:splashPop .9s ease-out forwards}
+.splash .drop{position:absolute;font-size:20px}
+.splash .d1{top:-8px;left:26px;animation:dropFly .8s ease-out forwards}
+.splash .d2{top:6px;left:-16px;animation:dropFly .7s ease-out .05s forwards}
+.splash .d3{top:-14px;left:-6px;animation:dropFly .9s ease-out .1s forwards}
+@keyframes splashPop{0%{transform:scale(.3);opacity:0}30%{transform:scale(1.25);opacity:1}100%{transform:scale(1);opacity:0}}
+@keyframes dropFly{0%{transform:translate(0,0);opacity:1}100%{transform:translate(14px,-26px);opacity:0}}
+.handgag{position:absolute;z-index:11;display:none;pointer-events:none;left:84%;bottom:calc(26% - 2px);transform:translateX(-50%)}
+.handgag.show{display:block}
+.handgag .hg-arm{
+  width:22px;height:0;border-radius:10px;
+  background:linear-gradient(90deg,#e0a878,#f2c48d 50%,#d99a66);
+  position:absolute;bottom:0;left:0;
+}
+.handgag.show .hg-arm{animation:armRise .9s ease-out forwards}
+@keyframes armRise{from{height:0}to{height:52px}}
+.handgag .hg-finger{
+  position:absolute;bottom:52px;left:50%;transform:translateX(-50%) translateY(30px);
+  font-size:40px;line-height:1;opacity:0;
+}
+.handgag.show .hg-finger{animation:fingerUp .7s ease-out .7s forwards}
+@keyframes fingerUp{from{transform:translateX(-50%) translateY(34px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+.handgag.wiggle .hg-finger{animation:fingerUp .7s ease-out .7s forwards, fingerWiggle .45s ease-in-out 1.5s infinite alternate}
+@keyframes fingerWiggle{from{transform:translateX(-50%) rotate(-7deg)}to{transform:translateX(-50%) rotate(7deg)}}
+.handgag .hg-cap{position:absolute;left:50%;transform:translateX(-50%);bottom:104px;white-space:nowrap;font-size:11.5px;font-weight:800;color:#ffe9b0;background:rgba(10,14,40,.8);padding:5px 10px;border-radius:10px;line-height:1.3}
+
+/* falling pirate */
+.fig.falling{animation:pirateFall 1.1s cubic-bezier(.5,0,.9,.4) forwards;z-index:12}
+@keyframes pirateFall{
+  0%{transform:translateY(0) rotate(0)}
+  20%{transform:translateY(14px) rotate(-12deg)}
+  45%{transform:translateY(52px) rotate(-46deg)}
+  100%{transform:translateY(120px) rotate(-95deg);opacity:.25}
+}
+.fig.topple{animation:pirateTopple .7s ease-in forwards}
+@keyframes pirateTopple{
+  0%{transform:rotate(0);transform-origin:bottom center}
+  100%{transform:rotate(-92deg);transform-origin:bottom center;opacity:.6}
+}
+
+.sink-cover{position:absolute;left:-12px;right:-12px;bottom:-8px;height:calc(26% + 12px);z-index:13;display:none;background:linear-gradient(180deg,#07517f 0%,#05406a 45%,#032c4e 100%)}
+.sink-cover.show{display:block}
+
+/* toast / feedback */
+.toast{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  background:rgba(12,10,30,.88);border:1.5px solid #ffd166;color:#ffe9b0;
+  font-size:13.5px;font-weight:800;padding:8px 14px;border-radius:999px;
+  z-index:15;max-width:94%;text-align:center;display:none;white-space:normal;
+  box-shadow:0 4px 14px rgba(0,0,0,.5);line-height:1.35;
+}
+.toast.show{display:block;animation:toastIn .3s ease-out}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.toast.good{border-color:#7ae582;color:#b7ffc0}
+.toast.bad{border-color:#ff6b6b;color:#ffc2c2}
+.toast.fun{border-color:#c77dff;color:#e6c6ff}
+
+/* — plank card — */
+.card-zone{width:100%;max-width:520px;padding:10px 10px 0}
+.plank-card{
+  position:relative;width:100%;border-radius:14px;overflow:hidden;
+  background:
+    repeating-linear-gradient(90deg,rgba(60,30,8,.25) 0 3px,transparent 3px 26px),
+    linear-gradient(180deg,#96582a,#6b3d1a 55%,#57300f);
+  border:2.5px solid #33200c;box-shadow:0 6px 16px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.22);
+  transition:transform .28s ease, opacity .28s ease;
+  transform:translateX(0);
+}
+.plank-card.slide-in{animation:cardIn .3s ease-out}
+@keyframes cardIn{from{transform:translateX(70%);opacity:0}to{transform:none;opacity:1}}
+.plank-card.slide-out{transform:translateX(-130%);opacity:0;transition:transform .3s ease-in,opacity .3s ease-in}
+.plank-card.grabbed{transform:translateY(46px) scale(.6);opacity:0;transition:transform .3s ease-in,opacity .3s ease-in}
+.pc-top{display:flex;align-items:center;gap:6px;padding:7px 10px 0;flex-wrap:wrap}
+.pc-party{
+  font-size:12px;font-weight:900;letter-spacing:1.2px;padding:4px 10px;border-radius:999px;
+  color:#fff;display:inline-flex;align-items:center;gap:5px;min-height:26px;
+  box-shadow:0 2px 4px rgba(0,0,0,.35);
+}
+.pc-party.R{background:#d62828}.pc-party.D{background:#1d4ed8}.pc-party.I{background:#7b2cbf}
+.pc-party.C{background:#4a0e0e;border:1px solid #ffd166}
+.pc-topic{font-size:10.5px;font-weight:800;color:#ffe3b8;background:rgba(0,0,0,.28);padding:3px 8px;border-radius:999px;letter-spacing:.6px}
+.pc-label{font-size:10px;color:#ffd9a0;background:rgba(0,0,0,.25);padding:3px 8px;border-radius:999px;font-weight:700}
+.pc-text{
+  padding:8px 12px 6px;font-size:15.5px;line-height:1.42;color:#fff4e2;font-weight:600;
+  min-height:64px;
+}
+.pc-timer{display:flex;align-items:center;gap:8px;padding:0 12px 10px}
+.pc-timer-track{flex:1;height:10px;background:rgba(0,0,0,.4);border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.15)}
+.pc-timer-fill{height:100%;width:100%;border-radius:999px;background:linear-gradient(90deg,#7ae582,#ffd166);transition:width .1s linear}
+.pc-timer-fill.urgent{background:linear-gradient(90deg,#ffb347,#ff4d4d)}
+#pcTime{font-size:12px;font-weight:900;color:#ffe9b0;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* action buttons */
+.actions{display:flex;gap:10px;width:100%;max-width:520px;padding:10px 10px 0}
+.actions .btn{flex:1;font-size:17px;min-height:58px}
+.btn-grab{background:linear-gradient(180deg,#ffe066,#f5a623);color:#3a2200;border:2px solid #c77b0a}
+.btn-grab:active{transform:translateY(3px)}
+.btn-pass{background:linear-gradient(180deg,#5b6b8c,#39435c);border:2px solid #232b3d;color:#fff}
+.btn-pass:active{transform:translateY(3px)}
+.feedback{
+  min-height:40px;width:100%;max-width:520px;text-align:center;
+  font-size:13.5px;font-weight:800;color:#ffd166;padding:8px 14px 0;line-height:1.4;font-style:italic;
+}
+.feedback.bad{color:#ff8f8f}
+.feedback.good{color:#9dffab}
+
+/* skip anim pill */
+.skip-anim{
+  display:none;position:absolute;bottom:8px;right:10px;z-index:16;
+  background:rgba(12,10,30,.75);border:1.5px solid rgba(255,255,255,.4);color:#fff;
+  font-size:13px;font-weight:800;padding:10px 16px;min-height:44px;border-radius:999px;cursor:pointer;font-family:inherit;
+}
+.skip-anim.show{display:block}
+
+/* ============================================================
+   END SCREEN
+   ============================================================ */
+#screenEnd{min-height:100vh;min-height:100dvh;justify-content:center;padding:18px 14px}
+.end-art{font-size:clamp(52px,16vw,84px);line-height:1.1;text-align:center;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45));animation:endArtIn .6s ease-out}
+@keyframes endArtIn{from{transform:scale(.3) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
+.meme{
+  width:100%;max-width:430px;border-radius:20px;padding:18px 16px 14px;margin-top:14px;
+  background:linear-gradient(180deg,#141c3f,#0d1330 70%);
+  border:2px solid rgba(255,209,102,.35);box-shadow:0 10px 34px rgba(0,0,0,.55);
+  text-align:center;
+}
+.meme .verdict{font-size:clamp(26px,8vw,36px);font-weight:900;line-height:1.1;color:#ffe9b0;letter-spacing:.5px}
+.meme .verdict small{display:block;font-size:12px;letter-spacing:3px;color:#8fa3d9;margin-bottom:4px;font-weight:800}
+.meme .roast{font-size:15.5px;color:#e8e2ff;margin-top:8px;line-height:1.45;padding:0 6px}
+.meme .stats{
+  margin-top:12px;background:rgba(0,0,0,.3);border-radius:12px;padding:10px 8px;
+  font-size:13.5px;color:#cdd7f5;font-weight:700;line-height:1.5;
+}
+.meme .stats b{color:#ffd166}
+.meme .wm-line{font-size:11.5px;color:#8fa3d9;letter-spacing:1.5px;margin-top:12px;font-weight:700}
+.end-btns{display:flex;flex-direction:column;gap:10px;width:100%;max-width:430px;margin-top:14px}
+.end-btns .row{display:flex;gap:10px}
+.end-btns .row .btn{flex:1;font-size:14.5px;min-height:54px;padding:10px 6px;white-space:nowrap}
+.author-foot{text-align:center;font-size:12.5px;color:#9aa7d6;margin-top:16px;line-height:1.7;max-width:430px;padding-bottom:12px}
+.author-foot .crazy{color:#ffe9b0;font-weight:800;font-style:italic}
+.author-foot a{color:#ffd166;font-weight:800;text-decoration:none;display:inline-block;min-height:44px;line-height:44px;padding:0 6px}
+.author-foot a:active{opacity:.6}
+
+/* ============================================================
+   RULES MODAL
+   ============================================================ */
+.modal{
+  position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+  background:rgba(4,6,20,.78);padding:18px;
+}
+.modal.show{display:flex}
+.modal-panel{
+  background:linear-gradient(180deg,#182350,#0e1433);border:2px solid rgba(255,209,102,.4);
+  border-radius:20px;padding:20px 18px;max-width:430px;width:100%;max-height:86vh;overflow-y:auto;
+  box-shadow:0 14px 44px rgba(0,0,0,.6);
+}
+.modal-panel h3{color:#ffe9b0;font-size:22px;text-align:center;margin-bottom:10px}
+.modal-panel ul{list-style:none}
+.modal-panel li{
+  font-size:14.5px;color:#e2e6ff;line-height:1.5;padding:8px 0 8px 30px;position:relative;border-bottom:1px solid rgba(255,255,255,.07);
+}
+.modal-panel li:last-child{border-bottom:none}
+.modal-panel li::before{content:attr(data-i);position:absolute;left:0;top:7px;width:22px;height:22px;border-radius:50%;background:#ffd166;color:#3a2a12;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.modal-panel li b{color:#ffd166}
+.modal-close{margin-top:14px;width:100%}
+/* tiny text helper */
+.tiny{font-size:11px;color:#8fa3d9;text-align:center;padding:4px 10px 0;line-height:1.4}
+
+/* safety: all tappable ≥44px */
+button,.pick-card,a.btn{min-height:44px}
+</style>
+</head>
+<body>
+<div id="app">
+
+
+<!-- ══════════════════ SCREEN 1 · OPENING SCENE ══════════════════ -->
+<section id="screenOpen" class="screen active">
+  <div class="title-wrap">
+    <div class="title"><span class="skull">🏴‍☠️</span> WALK-THE-PLANK</div>
+    <div class="subtitle">The party-plank gauntlet. Ye've been sentenced to the plank, matey — but the captain's planks have opinions.</div>
+    <div class="tagline">⚓ Grab 5 of YOUR party's planks · build a raft · sail to freedom</div>
+  </div>
+
+  <div class="open-scene" aria-hidden="true">
+    <div class="stars2"></div>
+    <div class="moon"></div>
+    <!-- ship -->
+    <div class="ship">
+      <div class="sail s1"></div>
+      <div class="sail s2"></div>
+      <div class="mast m1"></div>
+      <div class="mast m2"></div>
+      <div class="flag">🏴‍☠️</div>
+      <div class="parrot">🦜</div>
+      <div class="hull"></div>
+    </div>
+    <div class="wtp-plank"></div>
+    <div class="rope r1"></div>
+    <div class="rope r2"></div>
+    <!-- guard marching the captive -->
+    <div class="figwrap guard">
+      <div class="bubble guard-say">Walk, ye lubber! 🗡️</div>
+      <div class="fig captain">
+        <div class="hat"></div>
+        <div class="head"><div class="band"></div><div class="eye l"></div><div class="eye r"></div></div>
+        <div class="body"></div>
+        <div class="arm l"></div><div class="arm r"></div>
+        <div class="leg l"></div><div class="leg r"></div>
+      </div>
+    </div>
+    <div class="figwrap captive">
+      <div class="bubble captive-say">Not the plank! 😱</div>
+      <div class="fig pirate">
+        <div class="band"></div>
+        <div class="head"><div class="blind on"></div><div class="eye l"></div><div class="eye r"></div></div>
+        <div class="body"></div>
+        <div class="arm l"></div><div class="arm r"></div>
+        <div class="leg l"></div><div class="leg r"></div>
+      </div>
+    </div>
+    <div class="sea"></div>
+  </div>
+
+  <div class="caption-band">The captain's a <b>political junkie</b>. He'll toss ye party planks one at a time — grab the ones that match <b>yer party</b>. 5 planks → <b>raft</b>. 3 blunders → <b>shark bait</b>.</div>
+
+  <div class="open-btns">
+    <button id="btnPlay" class="btn btn-primary">▶ PLAY</button>
+    <button id="btnHow" class="btn btn-ghost">HOW IT WORKS</button>
+  </div>
+  <div class="wm"><a href="https://rockinapps.com" target="_blank" rel="noopener">rockinapps.com</a></div>
+</section>
+
+<!-- ══════════════════ SCREEN 2 · IDENTITY PICK ══════════════════ -->
+<section id="screenPick" class="screen">
+  <div class="pick-head">
+    <div class="kicker">🏴‍☠️ BEFORE YE WALK…</div>
+    <h2>Which party are ye?</h2>
+    <p>The captain will float planks by. Grab only the ones that belong to <b>yer own party</b> — the blindfold's slipped, so read fast!</p>
+  </div>
+  <div class="pick-cards">
+    <button class="pick-card pick-R" id="pickR">
+      <span class="pc-emoji">🐘</span>
+      <span><span class="pc-name">REPUBLICAN</span><br><span class="pc-sub">Free markets, strong borders, and a parrot that votes.</span></span>
+    </button>
+    <button class="pick-card pick-D" id="pickD">
+      <span class="pc-emoji">🐴</span>
+      <span><span class="pc-name">DEMOCRAT</span><br><span class="pc-sub">Fair seas, big plans, and rum for everyone.</span></span>
+    </button>
+    <button class="pick-card pick-I" id="pickI">
+      <span class="pc-emoji">🧭</span>
+      <span><span class="pc-name">INDEPENDENT</span><br><span class="pc-sub">No herd. Ye chart yer own course — Libertarian, Green, or gloriously confused.</span></span>
+    </button>
+  </div>
+  <button class="pick-back" id="btnPickBack">← Back to the ship</button>
+  <div class="tiny">(Communist planks may float by as traps. Grab one and the collective claims ye.)</div>
+</section>
+
+<!-- ══════════════════ SCREEN 3 · THE WALK ══════════════════ -->
+<section id="screenGame" class="screen">
+  <div class="hud">
+    <div class="hud-chip" id="hudParty"><span class="dot R"></span><span id="hudPartyName">REPUBLICAN</span></div>
+    <div class="hud-chip" id="hudRaft">🪵 RAFT <b id="raftCount">0</b>/5</div>
+    <div class="hud-chip">🦈 <span class="strike-dots" id="strikeDots"><i></i><i></i><i></i></span></div>
+  </div>
+
+  <div class="scene" id="sceneGame">
+    <div class="stars2"></div>
+    <div class="moon"></div>
+    <!-- ship -->
+    <div class="ship">
+      <div class="sail s1"></div>
+      <div class="sail s2"></div>
+      <div class="mast m1"></div>
+      <div class="mast m2"></div>
+      <div class="flag">🏴‍☠️</div>
+      <div class="parrot">🦜</div>
+      <div class="hull"></div>
+    </div>
+    <div class="wtp-plank"></div>
+    <div class="rope r1"></div>
+    <div class="rope r2"></div>
+
+    <!-- captain on deck, pointing -->
+    <div class="figwrap captain-pos">
+      <div class="fig captain">
+        <div class="hat"></div>
+        <div class="head"><div class="band"></div><div class="eye l"></div><div class="eye r"></div></div>
+        <div class="body"></div>
+        <div class="arm l"></div><div class="arm r"></div>
+        <div class="leg l"></div><div class="leg r"></div>
+      </div>
+    </div>
+
+    <!-- doomed pirate at plank end — blindfold SLIPPED (peek gag) -->
+    <div class="figwrap" id="pirateWrap">
+      <div class="fig pirate" id="pirateFig">
+        <div class="band"></div>
+        <div class="head">
+          <div class="blind off" id="pirateBlind"></div>
+          <div class="eye l"></div><div class="eye r"></div>
+        </div>
+        <div class="body"></div>
+        <div class="arm l"></div><div class="arm r"></div>
+        <div class="leg l"></div><div class="leg r"></div>
+      </div>
+      <div class="peek-flag" id="peekFlag">👀</div>
+      <div class="bubble" id="pirateBubble">Aye!</div>
+    </div>
+
+    <!-- raft dock: grows 1 board per correct grab -->
+    <div class="raft" id="raft">
+      <div class="mast"></div>
+      <div class="sail"></div>
+      <div class="rb" style="display:none" id="rbProto"></div>
+    </div>
+
+    <!-- FX -->
+    <div class="shark" id="shark">🦈</div>
+    <div class="splash" id="splash"><span>💦</span><span class="drop d1">💦</span><span class="drop d2">🫧</span><span class="drop d3">💦</span></div>
+    <div class="handgag" id="handgag">
+      <div class="hg-arm"></div>
+      <div class="hg-finger">🖕</div>
+      <div class="hg-cap">Talk to the hand.</div>
+    </div>
+    <div class="sink-cover" id="sinkCover"></div>
+    <div class="toast" id="toast"></div>
+    <div class="sea"></div>
+    <button class="skip-anim" id="skipAnim">SKIP ▶</button>
+  </div>
+
+  <!-- floating plank card -->
+  <div class="card-zone">
+    <div class="plank-card" id="plankCard">
+      <div class="pc-top">
+        <span class="pc-party R" id="pcParty">REPUBLICAN 🐘</span>
+        <span class="pc-topic" id="pcTopic">Economy</span>
+        <span class="pc-label" id="pcLabel" style="display:none"></span>
+      </div>
+      <div class="pc-text" id="pcText">Plank statement goes here, matey.</div>
+      <div class="pc-timer">
+        <span style="font-size:14px">⏳</span>
+        <div class="pc-timer-track"><div class="pc-timer-fill" id="pcTimerFill"></div></div>
+        <span id="pcTime">8.0s</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-grab" id="btnGrab">⚓ GRAB IT</button>
+    <button class="btn btn-pass" id="btnPass">⛵ LET PASS</button>
+  </div>
+  <div class="feedback" id="feedback">The captain shoves a plank yer way… grab it if it's yers!</div>
+
+  <!-- AD-SLOT-HAPPY-RULE: ad banners would mount here (e.g. 320x50) ONLY after Steve approves an ad network. No ad code until then. -->
+  <!-- IAP-SLOT-HAPPY-RULE: e.g. "remove ads" / tip-jar purchase would mount here. Placeholder only. -->
+</section>
+
+<!-- ══════════════════ SCREEN 4 · END / VERDICT ══════════════════ -->
+<section id="screenEnd" class="screen">
+  <div class="end-art" id="endArt">🏴‍☠️</div>
+  <div class="meme">
+    <div class="verdict" id="endVerdict"><small>THE VERDICT</small>TRUE BELIEVER</div>
+    <div class="roast" id="endRoast">Ye know yer party planks, matey. Arrr!</div>
+    <div class="stats" id="endStats">🪵 Grabbed <b>5</b> of yer party · ❌ <b>0</b> wrong grabs</div>
+    <div class="wm-line">rockinapps.com · #WalkThePlank</div>
+  </div>
+  <div class="end-btns">
+    <button class="btn btn-primary" id="btnShare">📣 SHARE YER FATE</button>
+    <div class="row">
+      <button class="btn btn-grab" id="btnAgain">⚓ PLAY AGAIN</button>
+      <button class="btn btn-pass" id="btnMenu">🏠 MENU</button>
+    </div>
+  </div>
+  <div class="author-foot">
+    <div>app by <b>Steve Haggerty</b>, author of some other <span class="crazy">crazy ass stuff</span></div>
+    <a id="acatLink" href="https://acat-free-chapters.subscribepage.io" target="_blank" rel="noopener">📖 Free chapters of “A Cross All Time” →</a>
+    <div class="tiny" style="padding-top:2px">a pirate tale about faith, time, and terrible life choices</div>
+  </div>
+</section>
+
+<!-- ══════════════════ RULES MODAL ══════════════════ -->
+<div class="modal" id="modalRules">
+  <div class="modal-panel">
+    <h3>🏴‍☠️ How It Works</h3>
+    <ul>
+      <li data-i="1">Pick yer party: <b>Republican</b>, <b>Democrat</b>, or <b>Independent</b>. The captain marches ye to the end of the plank — <b>blindfolded</b> (it slips, don't tell him).</li>
+      <li data-i="2">Party planks float past <b>one at a time</b>: Republican 🐘, Democrat 🐴, Independent 🧭… and the occasional <b>Communist 🚩 gag plank</b> (the captain finds it hilarious).</li>
+      <li data-i="3">Is the plank <b>yer party's</b>? Hit <b>⚓ GRAB IT</b>. Not yers? Hit <b>⛵ LET PASS</b>. Read the tag, read the plank, decide fast.</li>
+      <li data-i="4">Grab 5 of yer own planks → <b>build a raft and sail to freedom!</b> 🛟</li>
+      <li data-i="5">Blunder (grab a wrong-party plank — <b>including Commie planks</b> — or let yer OWN plank float by) → the captain's <b>sharks circle</b>. 🦈 3 blunders and ye <b>SINK</b>.</li>
+      <li data-i="6">The plank <b>timer gets shorter every round</b>. No pressure. Arrr.</li>
+    </ul>
+    <button class="btn btn-primary modal-close" id="btnCloseRules">⚓ GOT IT</button>
+  </div>
+</div>
+
+</div><!-- /#app -->
+
+<script>
+(function(){
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════════
+   CONFIG — Steve: these are the only URLs in the file.
+   ═══════════════════════════════════════════════════════════════════ */
+// ACAT = "A Cross All Time" reader-list subscriber page (MailerLite).
+// Published + verified 200 OK Aug 18 2026 (catch22_scorecard). If Steve
+// ever swaps this for a different landing page, change it HERE only.
+const ACAT_URL = 'https://acat-free-chapters.subscribepage.io';
+const ROCKIN_URL = 'https://rockinapps.com';
+const GAME_HASHTAG = '#WalkThePlank';
+
+/* AD-SLOT-HAPPY-RULE: No ad-network code goes in this file without
+   Steve's explicit approval. The visible slots are comment markers only
+   (see the AD-SLOT / IAP-SLOT comments in the HTML). */
+
+/* ═══════════════════════════════════════════════════════════════════
+   PLANK DATABASE — 65 planks, verbatim from
+   delivery/happy_walktheplank_planks.md §4 (R01–R25, D01–D25, I01–I15)
+   + 6 original Communist gag planks (comedic, no real politics).
+   Correctness rule: a plank is YOUR party's if its bucket matches your
+   party letter, OR its flags mark your party "yes" (data makes these
+   equivalent; both checks are kept for spec fidelity).
+   ═══════════════════════════════════════════════════════════════════ */
+const PLANKS = [{"id":"R01","bucket":"R","party":"Republican","label":null,"plank":"Make the 2017 tax cuts permanent, including the corporate rate.","topic":"Economy/Taxes","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R02","bucket":"R","party":"Republican","label":null,"plank":"No federal taxes on tips, overtime pay, or Social Security benefits.","topic":"Economy/Taxes","flags":{"R":"yes","D":"partial","I":"partial"}},{"id":"R03","bucket":"R","party":"Republican","label":null,"plank":"Cut federal regulations on energy production and business.","topic":"Economy/Taxes","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R04","bucket":"R","party":"Republican","label":null,"plank":"Reduce federal spending and shrink the size of the federal workforce.","topic":"Economy/Taxes","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R05","bucket":"R","party":"Republican","label":null,"plank":"Use tariffs to protect U.S. manufacturing and bring production back home.","topic":"Trade","flags":{"R":"yes","D":"partial","I":"partial"}},{"id":"R06","bucket":"R","party":"Republican","label":null,"plank":"Finish the border wall and increase border enforcement.","topic":"Immigration","flags":{"R":"yes","D":"no","I":"no"}},{"id":"R07","bucket":"R","party":"Republican","label":null,"plank":"Deport people in the country without legal status, starting with those convicted of crimes.","topic":"Immigration","flags":{"R":"yes","D":"no","I":"no"}},{"id":"R08","bucket":"R","party":"Republican","label":null,"plank":"Require proof of citizenship to register to vote.","topic":"Election Integrity","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R09","bucket":"R","party":"Republican","label":null,"plank":"Shift immigration toward a merit-based system that prioritizes skilled workers.","topic":"Immigration","flags":{"R":"yes","D":"partial","I":"partial"}},{"id":"R10","bucket":"R","party":"Republican","label":null,"plank":"Oppose new restrictions on gun ownership and protect the Second Amendment.","topic":"Guns","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R11","bucket":"R","party":"Republican","label":null,"plank":"Honor concealed carry permits across state lines.","topic":"Guns","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R12","bucket":"R","party":"Republican","label":null,"plank":"Leave abortion law to the states.","topic":"Abortion","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R13","bucket":"R","party":"Republican","label":null,"plank":"Oppose federal funding of abortion and protect access to IVF.","topic":"Abortion","flags":{"R":"yes","D":"partial","I":"partial"}},{"id":"R14","bucket":"R","party":"Republican","label":null,"plank":"Maximize domestic oil and natural gas production for energy independence.","topic":"Climate/Energy","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R15","bucket":"R","party":"Republican","label":null,"plank":"Repeal electric vehicle mandates and end federal EV subsidies.","topic":"Climate/Energy","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R16","bucket":"R","party":"Republican","label":null,"plank":"Withdraw the U.S. from the Paris climate agreement.","topic":"Climate/Energy","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R17","bucket":"R","party":"Republican","label":null,"plank":"Close the federal Department of Education and return school decisions to the states.","topic":"Education","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R18","bucket":"R","party":"Republican","label":null,"plank":"Expand school choice through vouchers and charter schools.","topic":"Education","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R19","bucket":"R","party":"Republican","label":null,"plank":"Put American interests first in foreign policy, ahead of global commitments.","topic":"Foreign Policy","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R20","bucket":"R","party":"Republican","label":null,"plank":"Require NATO allies to pay a larger share of their own defense costs.","topic":"Foreign Policy","flags":{"R":"yes","D":"partial","I":"partial"}},{"id":"R21","bucket":"R","party":"Republican","label":null,"plank":"End U.S. involvement in foreign wars and bring troops home.","topic":"Foreign Policy","flags":{"R":"yes","D":"partial","I":"partial"}},{"id":"R22","bucket":"R","party":"Republican","label":null,"plank":"Require voters to show photo ID at the polls.","topic":"Election Integrity","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R23","bucket":"R","party":"Republican","label":null,"plank":"Support single-day voting and paper ballots.","topic":"Election Integrity","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"R24","bucket":"R","party":"Republican","label":null,"plank":"Increase funding and support for law enforcement.","topic":"Crime","flags":{"R":"yes","D":"partial","I":"no"}},{"id":"R25","bucket":"R","party":"Republican","label":null,"plank":"Restrict women's school sports teams to athletes who are female at birth.","topic":"Social","flags":{"R":"yes","D":"no","I":"partial"}},{"id":"D01","bucket":"D","party":"Democrat","label":null,"plank":"Raise taxes on corporations and households earning over $400,000 a year.","topic":"Economy/Taxes","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D02","bucket":"D","party":"Democrat","label":null,"plank":"Expand the Child Tax Credit and make it permanent.","topic":"Economy/Taxes","flags":{"R":"partial","D":"yes","I":"partial"}},{"id":"D03","bucket":"D","party":"Democrat","label":null,"plank":"Raise the federal minimum wage.","topic":"Economy/Taxes","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D04","bucket":"D","party":"Democrat","label":null,"plank":"Strengthen labor unions and protect the right to organize.","topic":"Economy/Taxes","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D05","bucket":"D","party":"Democrat","label":null,"plank":"Protect and expand the Affordable Care Act.","topic":"Healthcare","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D06","bucket":"D","party":"Democrat","label":null,"plank":"Let Medicare negotiate prescription drug prices and cap seniors' out-of-pocket costs.","topic":"Healthcare","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D07","bucket":"D","party":"Democrat","label":null,"plank":"Guarantee access to abortion and protect reproductive rights nationwide.","topic":"Abortion","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D08","bucket":"D","party":"Democrat","label":null,"plank":"Expand Medicare to cover dental, vision, and hearing.","topic":"Healthcare","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D09","bucket":"D","party":"Democrat","label":null,"plank":"Reach net-zero carbon emissions by 2050.","topic":"Climate/Energy","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D10","bucket":"D","party":"Democrat","label":null,"plank":"Invest in clean energy, electric vehicles, and a modernized electric grid.","topic":"Climate/Energy","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D11","bucket":"D","party":"Democrat","label":null,"plank":"Rejoin international climate agreements and lead global climate action.","topic":"Climate/Energy","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D12","bucket":"D","party":"Democrat","label":null,"plank":"Create a path to citizenship for undocumented immigrants, including Dreamers.","topic":"Immigration","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D13","bucket":"D","party":"Democrat","label":null,"plank":"Reduce reliance on immigration detention and expand case management programs.","topic":"Immigration","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D14","bucket":"D","party":"Democrat","label":null,"plank":"Require universal background checks for all gun sales.","topic":"Guns","flags":{"R":"no","D":"yes","I":"no"}},{"id":"D15","bucket":"D","party":"Democrat","label":null,"plank":"Reinstate the federal ban on certain semi-automatic rifles and high-capacity magazines.","topic":"Guns","flags":{"R":"no","D":"yes","I":"no"}},{"id":"D16","bucket":"D","party":"Democrat","label":null,"plank":"Allow courts to issue red flag orders that temporarily remove guns from people who pose a risk.","topic":"Guns","flags":{"R":"partial","D":"yes","I":"no"}},{"id":"D17","bucket":"D","party":"Democrat","label":null,"plank":"Provide free universal pre-K and free community college.","topic":"Education","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D18","bucket":"D","party":"Democrat","label":null,"plank":"Cancel student loan debt and make college more affordable.","topic":"Education","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D19","bucket":"D","party":"Democrat","label":null,"plank":"Increase funding for public schools, especially in lower-income areas.","topic":"Education","flags":{"R":"partial","D":"yes","I":"partial"}},{"id":"D20","bucket":"D","party":"Democrat","label":null,"plank":"Support Ukraine's defense against Russia's invasion.","topic":"Foreign Policy","flags":{"R":"partial","D":"yes","I":"no"}},{"id":"D21","bucket":"D","party":"Democrat","label":null,"plank":"Strengthen alliances such as NATO and support collective defense.","topic":"Foreign Policy","flags":{"R":"partial","D":"yes","I":"no"}},{"id":"D22","bucket":"D","party":"Democrat","label":null,"plank":"Restore and expand Voting Rights Act protections.","topic":"Election Integrity","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D23","bucket":"D","party":"Democrat","label":null,"plank":"Limit campaign spending and overturn the Citizens United ruling.","topic":"Election Integrity","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D24","bucket":"D","party":"Democrat","label":null,"plank":"Expand early voting and mail-in voting options.","topic":"Election Integrity","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"D25","bucket":"D","party":"Democrat","label":null,"plank":"Provide paid family and medical leave for all workers.","topic":"Social","flags":{"R":"no","D":"yes","I":"partial"}},{"id":"I01","bucket":"I","party":"Libertarian","label":"Libertarian","plank":"End the federal income tax and replace it with a consumption tax.","topic":"Economy/Taxes","flags":{"R":"no","D":"no","I":"yes"}},{"id":"I02","bucket":"I","party":"Libertarian","label":"Libertarian","plank":"Abolish the Federal Reserve and back the dollar with gold and silver.","topic":"Economy/Taxes","flags":{"R":"partial","D":"no","I":"yes"}},{"id":"I03","bucket":"I","party":"Libertarian","label":"Libertarian","plank":"End the war on drugs and legalize marijuana.","topic":"Crime","flags":{"R":"partial","D":"partial","I":"yes"}},{"id":"I04","bucket":"I","party":"Libertarian","label":"Libertarian","plank":"Adopt a non-interventionist foreign policy: no foreign wars and no foreign aid.","topic":"Foreign Policy","flags":{"R":"partial","D":"no","I":"yes"}},{"id":"I05","bucket":"I","party":"Libertarian","label":"Libertarian","plank":"Eliminate tariffs and promote free trade between nations.","topic":"Trade","flags":{"R":"no","D":"partial","I":"yes"}},{"id":"I06","bucket":"I","party":"Libertarian","label":"Libertarian","plank":"Allow unrestricted immigration so people can move freely to work.","topic":"Immigration","flags":{"R":"no","D":"no","I":"yes"}},{"id":"I07","bucket":"I","party":"Libertarian","label":"Libertarian","plank":"Require the federal government to balance its budget every year.","topic":"Economy/Taxes","flags":{"R":"partial","D":"no","I":"yes"}},{"id":"I08","bucket":"I","party":"Libertarian","label":"Libertarian","plank":"End qualified immunity so citizens can sue police officers for misconduct.","topic":"Crime","flags":{"R":"no","D":"partial","I":"yes"}},{"id":"I09","bucket":"I","party":"Green","label":"Green","plank":"Adopt a Green New Deal to reach 100% renewable energy and net-zero emissions.","topic":"Climate/Energy","flags":{"R":"no","D":"partial","I":"yes"}},{"id":"I10","bucket":"I","party":"Green","label":"Green","plank":"Provide Medicare for All: a single government health plan for everyone.","topic":"Healthcare","flags":{"R":"no","D":"partial","I":"yes"}},{"id":"I11","bucket":"I","party":"Green","label":"Green","plank":"Cancel all student debt and make public college tuition-free.","topic":"Education","flags":{"R":"no","D":"partial","I":"yes"}},{"id":"I12","bucket":"I","party":"Green","label":"Green","plank":"Cut the military budget in half and close overseas military bases.","topic":"Foreign Policy","flags":{"R":"no","D":"no","I":"yes"}},{"id":"I13","bucket":"I","party":"Green","label":"Green","plank":"Abolish the Electoral College and elect the president by national popular vote.","topic":"Election Integrity","flags":{"R":"no","D":"partial","I":"yes"}},{"id":"I14","bucket":"I","party":"Green","label":"Green","plank":"Abolish ICE and replace it with a new immigration agency.","topic":"Immigration","flags":{"R":"no","D":"no","I":"yes"}},{"id":"I15","bucket":"I","party":"Green","label":"Green","plank":"Ban fracking and end new federal fossil fuel leases.","topic":"Climate/Energy","flags":{"R":"no","D":"partial","I":"yes"}}];
+
+const COMMIE_PLANKS = [
+  {id:'C01', bucket:'C', party:'Communist', label:null, topic:'Gag',
+   plank:'This plank is now property of the people. All 8 billion of them. Shared plank, comrade.',
+   flags:{R:'no',D:'no',I:'no'}},
+  {id:'C02', bucket:'C', party:'Communist', label:null, topic:'Gag',
+   plank:'The Central Committee of Planks has approved this timber for the collective raft.',
+   flags:{R:'no',D:'no',I:'no'}},
+  {id:'C03', bucket:'C', party:'Communist', label:null, topic:'Gag',
+   plank:'Five-Year Raft Plan: grab this plank and report to the Ministry of Sailing.',
+   flags:{R:'no',D:'no',I:'no'}},
+  {id:'C04', bucket:'C', party:'Communist', label:null, topic:'Gag',
+   plank:'Workers of the sea, unite! Ye have nothing to lose but yer chains — and yer ship.',
+   flags:{R:'no',D:'no',I:'no'}},
+  {id:'C05', bucket:'C', party:'Communist', label:null, topic:'Gag',
+   plank:'This plank has been redistributed from the bourgeoisie ship. Take it. For the people.',
+   flags:{R:'no',D:'no',I:'no'}},
+  {id:'C06', bucket:'C', party:'Communist', label:null, topic:'Gag',
+   plank:'The Party has spoken: all planks are equal, but this plank is more equal than others.',
+   flags:{R:'no',D:'no',I:'no'}}
+];
+
+/* ── party presentation ── */
+const PARTY_META = {
+  R:{key:'R', name:'REPUBLICAN', emoji:'🐘', you:'Republican', dot:'R'},
+  D:{key:'D', name:'DEMOCRAT',   emoji:'🐴', you:'Democrat',   dot:'D'},
+  I:{key:'I', name:'INDEPENDENT',emoji:'🧭', you:'Independent',dot:'I'},
+  C:{key:'C', name:'COMMUNIST',  emoji:'🚩', you:'Communist',  dot:'C'}
+};
+const BUCKET_META = {
+  R:{name:'REPUBLICAN', emoji:'🐘'},
+  D:{name:'DEMOCRAT',   emoji:'🐴'},
+  I:{name:'INDEPENDENT',emoji:'🧭'},
+  C:{name:'COMMUNIST',  emoji:'🚩'}
+};
+
+/* ── flavor pools ── */
+const LINES = {
+  ownGrab:[
+    "Aye! That's OUR plank!",
+    "Correct, matey! To the raft with it!",
+    "Yarrr — right as rain!",
+    "One more plank for the raft!",
+    "Nice catch, ye beautiful buccaneer!",
+    "Ha! The captain's jaw just dropped."
+  ],
+  wrongGrab:[
+    "BLUNDER! That one sails for the {party}, not us!",
+    "Ye grabbed the wrong party's timber!",
+    "Shiver me timbers — that's not ours!",
+    "Wrong color, wrong plank, wrong idea!",
+    "The captain's cackling. That's bad."
+  ],
+  commieGrab:[
+    "Ye grabbed a Commie plank!",
+    "The collective thanks ye! Wait — NO!",
+    "That plank belongs to the people, comrade!",
+    "Even the parrot knows that one's red, matey."
+  ],
+  missOwn:[
+    "Yer OWN plank floated by, ye dolt!",
+    "Missed it! That one was YOURS!",
+    "The captain saw that. Strike one!",
+    "That plank had yer name on it. Literally."
+  ],
+  passWrong:[
+    "Not ours — let it drift.",
+    "Good eye, matey. Not our timber.",
+    "Aye, let the other herd have that one."
+  ],
+  bubbleAye:["Aye!","Yarrr!","Mine!","To the raft!","Ha-HA!"],
+  bubbleNo:["Arrrgh!","Blast!","Not mine!","Captain!!"]
+};
+
+const WIN_ROASTS = [
+  "Ye know yer party planks, matey. Arrr!",
+  "Five for five. The captain is FURIOUS. The sharks are impressed — that's rare.",
+  "Yer party would be proud. Probably.",
+  "Blindfold slipped? We'll never tell. Enjoy the open sea."
+];
+const LOSE_ROASTS = {
+  R:[
+    "Maybe ye aren't as Republican as ye thought, matey.",
+    "The free market has decided: ye sink.",
+    "Supply and demand of planks: demand was low.",
+    "The Invisible Hand gave ye a thumbs-down. Then a wave."
+  ],
+  D:[
+    "Maybe ye aren't as Democratic as ye thought, matey.",
+    "The planks were for the many, not the few. Ye got neither.",
+    "Ye ran left when the plank said right.",
+    "No plank left behind. Except you."
+  ],
+  I:[
+    "Too independent for yer own good, eh?",
+    "Both parties floated by. So did ye. Then ye sank.",
+    "Ye charted yer own course... straight down.",
+    "A pox on both yer houses — and yer raft."
+  ]
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   PURE CORE (no DOM — self-test runs this in Node too)
+   ═══════════════════════════════════════════════════════════════════ */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+/* Deck per run: 8 own-party + 6 wrong-party + 2 Commie gags, shuffled.
+   Own = same bucket as player (flags rule is equivalent — see self-test).
+   Guarantees: deck always resolves to a win or a sink (never stalls). */
+function buildDeck(partyKey){
+  const own   = shuffle(PLANKS.filter(function(p){ return p.bucket === partyKey; })).slice(0, 8);
+  const wrong = shuffle(PLANKS.filter(function(p){ return p.bucket !== partyKey; })).slice(0, 6);
+  const commie= shuffle(COMMIE_PLANKS).slice(0, 2);
+  return shuffle(own.concat(wrong, commie));
+}
+
+function isOwnPlank(plank, partyKey){
+  if(plank.bucket === partyKey) return true;
+  return plank.flags && plank.flags[partyKey] === 'yes';
+}
+
+/* Plank timer: 8s on plank #1, shrinking every plank, 2.5s floor. */
+function durationFor(planksSeen){
+  return Math.max(2500, Math.round(8000 * Math.pow(0.9, planksSeen - 1)));
+}
+
+/* Pure decision classifier — shared by the game and the self-test. */
+function simDecision(plank, partyKey, action){
+  const own = isOwnPlank(plank, partyKey);
+  if(action === 'grab'){
+    if(own) return 'ownGrab';
+    return plank.bucket === 'C' ? 'commieGrab' : 'wrongGrab';
+  }
+  /* pass */
+  if(own) return 'ownMiss';
+  return 'passWrong';
+}
+
+/* Deterministic whole-run simulator for the self-test. */
+function runSim(partyKey, strategy){
+  const st = {raft:0, strikes:0, ownGrabbed:0, wrongGrabbed:0, commieGrabbed:0, ownMissed:0, planksSeen:0, outcome:null};
+  let deck = buildDeck(partyKey), di = 0;
+  let SAFETY = 400;
+  while(st.outcome === null && SAFETY-- > 0){
+    if(di >= deck.length){ deck = buildDeck(partyKey); di = 0; }
+    const plank = deck[di++];
+    st.planksSeen++;
+    const action = strategy(plank, st);
+    const kind = simDecision(plank, partyKey, action);
+    if(kind === 'ownGrab'){ st.raft++; st.ownGrabbed++; if(st.raft >= 5) st.outcome = 'WIN'; }
+    else if(kind === 'commieGrab'){ st.wrongGrabbed++; st.commieGrabbed++; st.strikes++; if(st.strikes >= 3) st.outcome = 'SINK'; }
+    else if(kind === 'wrongGrab'){ st.wrongGrabbed++; st.strikes++; if(st.strikes >= 3) st.outcome = 'SINK'; }
+    else if(kind === 'ownMiss'){ st.ownMissed++; st.strikes++; if(st.strikes >= 3) st.outcome = 'SINK'; }
+  }
+  return st;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SELF-TEST — runSelfTest() logs to console, returns true on pass.
+   Covers: data integrity, correctness rule, deck guarantees, timer
+   curve, and full start→WIN / start→SINK simulations.
+   ═══════════════════════════════════════════════════════════════════ */
+function runSelfTest(){
+  const log = [];
+  let pass = true;
+  function t(name, cond){ pass = pass && !!cond; log.push((cond ? '  ✅ ' : '  ❌ ') + name); }
+
+  /* 1. data integrity */
+  t('PLANKS has 65 items', PLANKS.length === 65);
+  const ids = PLANKS.map(function(p){ return p.id; });
+  t('plank ids unique', new Set(ids).size === 65);
+  const bc = {R:0,D:0,I:0};
+  PLANKS.forEach(function(p){ bc[p.bucket]++; });
+  t('buckets R25/D25/I15', bc.R === 25 && bc.D === 25 && bc.I === 15);
+  t('every bucket-R plank flags.R=yes', PLANKS.filter(function(p){return p.bucket==='R';}).every(function(p){return p.flags.R==='yes';}));
+  t('every bucket-D plank flags.D=yes', PLANKS.filter(function(p){return p.bucket==='D';}).every(function(p){return p.flags.D==='yes';}));
+  t('every bucket-I plank flags.I=yes', PLANKS.filter(function(p){return p.bucket==='I';}).every(function(p){return p.flags.I==='yes';}));
+  t('no other bucket has flags.<party>=yes (rule equivalence)',
+    PLANKS.every(function(p){
+      if(p.bucket !== 'R' && p.flags.R === 'yes') return false;
+      if(p.bucket !== 'D' && p.flags.D === 'yes') return false;
+      if(p.bucket !== 'I' && p.flags.I === 'yes') return false;
+      return true;
+    }));
+
+  /* 2. correctness classifier equals bucket match on this data */
+  t('isOwnPlank ≡ bucket match (all planks × R,D,I)',
+    ['R','D','I'].every(function(party){
+      return PLANKS.every(function(p){ return isOwnPlank(p, party) === (p.bucket === party); });
+    }));
+
+  /* 3. deck guarantees for every pickable party */
+  ['R','D','I'].forEach(function(party){
+    for(let i = 0; i < 5; i++){
+      const deck = buildDeck(party);
+      t('deck(' + party + ') #' + i + ' = 16 unique planks',
+        deck.length === 16 && new Set(deck.map(function(p){return p.id;})).size === 16);
+      const own = deck.filter(function(p){ return p.bucket === party; }).length;
+      const com = deck.filter(function(p){ return p.bucket === 'C'; }).length;
+      t('deck(' + party + ') #' + i + ' has 8 own + 2 commie', own === 8 && com === 2);
+    }
+  });
+
+  /* 4. timer curve: starts 8s, shrinks, floors at 2.5s */
+  t('timer plank#1 = 8000ms', durationFor(1) === 8000);
+  t('timer shrinks monotonically', durationFor(1) >= durationFor(3) && durationFor(3) >= durationFor(10));
+  t('timer floor = 2500ms', durationFor(1) > 2500 && durationFor(40) === 2500 && durationFor(99) === 2500);
+
+  /* 5. full start→WIN simulation (grab own, pass the rest) */
+  ['R','D','I'].forEach(function(party){
+    const st = runSim(party, function(plank, s){
+      return isOwnPlank(plank, party) ? 'grab' : 'pass';
+    });
+    t('sim WIN(' + party + '): outcome WIN, raft 5, wrong 0, strikes 0',
+      st.outcome === 'WIN' && st.raft === 5 && st.wrongGrabbed === 0 && st.strikes === 0 && st.ownGrabbed === 5);
+  });
+
+  /* 6. full start→SINK simulation (pass everything → own planks slip by) */
+  ['R','D','I'].forEach(function(party){
+    const st = runSim(party, function(){ return 'pass'; });
+    t('sim SINK(' + party + '): outcome SINK, strikes 3, raft < 5',
+      st.outcome === 'SINK' && st.strikes === 3 && st.raft < 5);
+  });
+
+  /* 7. greedy-grab-everything simulation always terminates */
+  const g = runSim('R', function(){ return 'grab'; });
+  t('sim grab-everything terminates (WIN or SINK)', g.outcome === 'WIN' || g.outcome === 'SINK');
+
+  console.log('═══ Walk-the-Plank self-test ═══');
+  log.forEach(function(l){ console.log(l); });
+  console.log(pass ? '✅✅ SELF-TEST PASS — all ' + log.length + ' checks green. Arrr!' : '❌❌ SELF-TEST FAIL — see above.');
+  return pass;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DOM LAYER (browser only)
+   ═══════════════════════════════════════════════════════════════════ */
+const $ = function(id){ return document.getElementById(id); };
+const $$ = function(sel){ return document.querySelector(sel); };
+
+const state = {
+  party:null, deck:[], di:0, plank:null,
+  planksSeen:0, raft:0, strikes:0,
+  ownGrabbed:0, wrongGrabbed:0, commieGrabbed:0, ownMissed:0,
+  phase:'idle', outcome:null,
+  timerIv:null, deadline:0, timeouts:[]
+};
+const el = {};
+function cacheEls(){
+  ['screenOpen','screenPick','screenGame','screenEnd','modalRules',
+   'hudPartyName','raftCount','strikeDots','pcParty','pcTopic','pcLabel','pcText',
+   'pcTimerFill','pcTime','plankCard','btnGrab','btnPass','feedback','toast',
+   'pirateFig','pirateBlind','peekFlag','pirateBubble','raft','shark','splash',
+   'handgag','sinkCover','skipAnim','endArt','endVerdict','endRoast','endStats',
+   'btnShare','btnAgain','btnMenu','acatLink'].forEach(function(id){ el[id] = $(id); });
+}
+function later(fn, ms){
+  const id = setTimeout(fn, ms);
+  state.timeouts.push(id);
+  return id;
+}
+function clearTimers(){
+  state.timeouts.forEach(clearTimeout);
+  state.timeouts = [];
+  if(state.timerIv){ clearInterval(state.timerIv); state.timerIv = null; }
+}
+
+function showScreen(id){
+  ['screenOpen','screenPick','screenGame','screenEnd'].forEach(function(s){
+    const node = $(s);
+    if(node) node.classList.toggle('active', s === id);
+  });
+  window.scrollTo(0, 0);
+}
+
+/* — HUD — */
+function renderHud(){
+  const meta = PARTY_META[state.party];
+  el.hudPartyName.textContent = meta ? meta.name : '—';
+  const dot = $$('#hudParty .dot');
+  if(dot && meta){ dot.className = 'dot ' + meta.dot; }
+  el.raftCount.textContent = state.raft;
+  const dots = el.strikeDots.querySelectorAll('i');
+  for(let i = 0; i < dots.length; i++) dots[i].classList.toggle('hit', i < state.strikes);
+}
+
+/* — pirate stagecraft — */
+function pirateBubbleSay(text, ms){
+  el.pirateBubble.textContent = text;
+  el.pirateBubble.classList.add('show');
+  later(function(){ el.pirateBubble.classList.remove('show'); }, ms || 1500);
+}
+function flashPeek(){
+  el.peekFlag.classList.add('show');
+  later(function(){ el.peekFlag.classList.remove('show'); }, 1500);
+}
+function pirateHop(){ el.pirateFig.classList.remove('hop'); void el.pirateFig.offsetWidth; el.pirateFig.classList.add('hop'); }
+function pirateWobble(){ el.pirateFig.classList.remove('wobble'); void el.pirateFig.offsetWidth; el.pirateFig.classList.add('wobble'); }
+function runShark(){
+  el.shark.classList.remove('run'); void el.shark.offsetWidth; el.shark.classList.add('run');
+  later(function(){ el.shark.classList.remove('run'); }, 1700);
+}
+function sayToast(text, kind){
+  el.toast.textContent = text;
+  el.toast.className = 'toast show' + (kind ? ' ' + kind : '');
+  later(function(){ el.toast.classList.remove('show'); }, 2000);
+}
+function setFeedback(text, kind){
+  el.feedback.textContent = text;
+  el.feedback.className = 'feedback' + (kind ? ' ' + kind : '');
+}
+function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+/* — plank card — */
+function renderCard(plank){
+  const bm = BUCKET_META[plank.bucket] || BUCKET_META.I;
+  el.pcParty.textContent = bm.name + ' ' + bm.emoji;
+  el.pcParty.className = 'pc-party ' + (plank.bucket === 'C' ? 'C' : plank.bucket === 'I' ? 'I' : plank.bucket);
+  el.pcTopic.textContent = plank.topic || '';
+  if(plank.bucket === 'I' && plank.party && plank.party !== 'Independent'){
+    el.pcLabel.style.display = 'inline-block';
+    el.pcLabel.textContent = plank.party;
+  } else {
+    el.pcLabel.style.display = 'none';
+  }
+  el.pcText.textContent = plank.plank;
+  el.plankCard.style.transition = 'none';
+  el.plankCard.classList.remove('slide-in','slide-out','grabbed');
+  void el.plankCard.offsetWidth;
+  el.plankCard.style.transition = '';
+  el.plankCard.classList.add('slide-in');
+  flashPeek();
+}
+
+function stopTimer(){
+  if(state.timerIv){ clearInterval(state.timerIv); state.timerIv = null; }
+}
+function startTimer(ms){
+  stopTimer();
+  state.deadline = Date.now() + ms;
+  const fill = el.pcTimerFill, timeEl = el.pcTime;
+  fill.classList.remove('urgent');
+  fill.style.width = '100%';
+  const tick = function(){
+    const remain = state.deadline - Date.now();
+    if(remain <= 0){
+      fill.style.width = '0%';
+      timeEl.textContent = '0.0s';
+      stopTimer();
+      onTimeout();
+      return;
+    }
+    fill.style.width = Math.max(0, (remain / ms) * 100) + '%';
+    timeEl.textContent = (remain / 1000).toFixed(1) + 's';
+    if(remain < ms * 0.3) fill.classList.add('urgent');
+  };
+  tick();
+  state.timerIv = setInterval(tick, 100);
+}
+
+/* — action handling — */
+function onTimeout(){
+  if(state.phase !== 'active') return;
+  state.phase = 'resolving';
+  /* time ran out = the plank drifted past */
+  decide('pass', true);
+}
+function handleGrab(){ if(state.phase === 'active'){ state.phase = 'resolving'; decide('grab', false); } }
+function handlePass(){ if(state.phase === 'active'){ state.phase = 'resolving'; decide('pass', false); } }
+
+function decide(action, timedOut){
+  stopTimer();
+  const plank = state.plank;
+  const kind = simDecision(plank, state.party, action);
+  const plankPartyName = BUCKET_META[plank.bucket] ? BUCKET_META[plank.bucket].name : 'another party';
+
+  if(kind === 'ownGrab'){
+    state.raft++; state.ownGrabbed++;
+    addRaftBoard();
+    renderHud();
+    pirateHop();
+    pirateBubbleSay(pick(LINES.bubbleAye), 1300);
+    sayToast('🪵 Correct! To the raft!', 'good');
+    setFeedback(pick(LINES.ownGrab), 'good');
+    el.plankCard.classList.add('grabbed');
+    if(state.raft >= 5){
+      state.outcome = 'WIN';
+      later(function(){ winSequence(); }, 650);
+    } else {
+      later(function(){ nextPlank(); }, 500);
+    }
+  } else if(kind === 'commieGrab'){
+    state.wrongGrabbed++; state.commieGrabbed++;
+    sayToast('🚩 Ye grabbed a Commie plank!', 'fun');
+    setFeedback(pick(LINES.commieGrab), 'bad');
+    strike();
+  } else if(kind === 'wrongGrab'){
+    state.wrongGrabbed++;
+    sayToast('❌ Wrong plank, matey!', 'bad');
+    setFeedback(pick(LINES.wrongGrab).replace('{party}', plankPartyName.toLowerCase()), 'bad');
+    strike();
+  } else if(kind === 'ownMiss'){
+    state.ownMissed++;
+    sayToast('⏳ Too slow — that was YOURS!', 'bad');
+    setFeedback(pick(LINES.missOwn), 'bad');
+    strike();
+  } else { /* passWrong */
+    setFeedback(pick(LINES.passWrong), 'good');
+    el.plankCard.classList.add('slide-out');
+    later(function(){ nextPlank(); }, 420);
+  }
+}
+
+function strike(){
+  state.strikes++;
+  renderHud();
+  pirateWobble();
+  runShark();
+  el.plankCard.classList.add('slide-out');
+  if(state.strikes >= 3){
+    state.outcome = 'SINK';
+    sayToast('🦈💀 THREE STRIKES — YE SINK!', 'bad');
+    later(function(){ sinkSequence(); }, 900);
+  } else {
+    sayToast('🦈 A shark circles… strike ' + state.strikes + ' of 3', 'bad');
+    later(function(){ nextPlank(); }, 1000);
+  }
+}
+
+function nextPlank(){
+  if(state.outcome) return;
+  state.phase = 'idle';
+  if(state.di >= state.deck.length){
+    /* safety net — a fresh deck (normal play always resolves first) */
+    state.deck = buildDeck(state.party);
+    state.di = 0;
+  }
+  state.plank = state.deck[state.di++];
+  state.planksSeen++;
+  renderCard(state.plank);
+  const dur = durationFor(state.planksSeen);
+  setFeedback('⚡ Plank #' + state.planksSeen + ' — ' + (dur/1000).toFixed(1) + 's to decide. Yers? GRAB IT!');
+  el.plankCard.classList.remove('slide-out','grabbed');
+  state.phase = 'active';
+  startTimer(dur);
+}
+
+/* — raft boards — */
+function addRaftBoard(){
+  const board = document.createElement('div');
+  board.className = 'rb';
+  el.raft.appendChild(board);
+}
+function clearRaft(){ el.raft.innerHTML = '<div class="mast"></div><div class="sail"></div>'; }
+
+/* — FX helpers — */
+function showSplashAt(xPct){
+  el.splash.style.left = xPct;
+  el.splash.style.bottom = 'calc(26% - 12px)';
+  el.splash.classList.remove('show'); void el.splash.offsetWidth;
+  el.splash.classList.add('show');
+}
+function showSinkCover(){ el.sinkCover.classList.add('show'); }
+
+function setAnimating(on){
+  el.btnGrab.disabled = on;
+  el.btnPass.disabled = on;
+  el.skipAnim.classList.toggle('show', on);
+}
+
+/* — WIN sequence: step off → fall → splash → raft + sail away — */
+function winSequence(){
+  setAnimating(true);
+  clearTimers();
+  state.phase = 'over';
+  sayToast('🪵 FIVE PLANKS! Build the raft, matey!', 'good');
+  pirateBubbleSay('FREEDOM!!!', 2000);
+  el.plankCard.classList.add('slide-out');
+  later(function(){
+    /* step off the plank — the fall */
+    el.pirateFig.classList.add('falling');
+    showSplashAt('88%');
+    later(function(){ showSinkCover(); }, 750);
+    later(function(){ el.pirateWrap.style.display = 'none'; }, 800);
+    /* raft rises with sail + pirate aboard */
+    later(function(){
+      el.raft.classList.add('sailing');
+      const clone = el.pirateFig.cloneNode(true);
+      clone.removeAttribute('id');
+      const blind = clone.querySelector('.blind');
+      if(blind) blind.remove();
+      clone.classList.remove('falling','wobble','hop');
+      clone.classList.add('wave');
+      clone.style.position = 'absolute';
+      clone.style.left = '50%';
+      clone.style.bottom = '22px';
+      clone.style.transform = 'translateX(-50%) scale(.85)';
+      clone.style.transformOrigin = 'bottom center';
+      el.raft.appendChild(clone);
+    }, 950);
+    later(function(){
+      sayToast('🏴‍☠️ YARRR — SAILING TO FREEDOM!', 'good');
+      pirateBubbleSay('');
+    }, 1500);
+    later(function(){ showEnd('WIN'); }, 3800);
+  }, 700);
+}
+
+/* — SINK sequence: topple → fall → splash → the middle-finger gag — */
+function sinkSequence(){
+  setAnimating(true);
+  clearTimers();
+  state.phase = 'over';
+  el.plankCard.classList.add('slide-out');
+  pirateBubbleSay('BYE, LANDLUBBERS!', 1600);
+  later(function(){
+    el.pirateFig.classList.add('falling');
+    later(function(){ showSplashAt('88%'); }, 420);
+    later(function(){ showSinkCover(); }, 780);
+    later(function(){
+      el.pirateWrap.style.display = 'none';
+      el.handgag.classList.add('show');
+      later(function(){ el.handgag.classList.add('wiggle'); }, 1600);
+      later(function(){
+        sayToast('🖕💦 SANK. The hand has spoken.', 'fun');
+      }, 1700);
+    }, 900);
+    later(function(){ showEnd('SINK'); }, 3600);
+  }, 650);
+}
+
+/* — END screen — */
+function showEnd(result){
+  clearTimers();
+  setAnimating(false);
+  const party = state.party;
+  const you = PARTY_META[party].you;
+  let verdict, roast, art, shareText;
+  if(result === 'WIN'){
+    art = '🏴‍☠️🛟';
+    verdict = 'TRUE BELIEVER';
+    roast = pick(WIN_ROASTS);
+    shareText = '🏴‍☠️ I walked the plank, grabbed 5 ' + you + ' planks, built a raft and SAILED TO FREEDOM! TRUE BELIEVER. ' + ROCKIN_URL + ' ' + GAME_HASHTAG;
+  } else {
+    art = '🖕';
+    verdict = 'SANK.';
+    const pool = (state.commieGrabbed > 0 && LOSE_ROASTS[party])
+      ? ['Ye grabbed a Commie plank and the collective declined to save ye.'].concat(LOSE_ROASTS[party])
+      : LOSE_ROASTS[party];
+    roast = pick(pool);
+    shareText = '🖕 I sank at Walk-the-Plank after grabbing ' + state.ownGrabbed + ' of my ' + you + ' planks. Maybe I\'m not as ' + you + ' as I thought... ' + ROCKIN_URL + ' ' + GAME_HASHTAG;
+  }
+  el.endArt.textContent = art;
+  el.endVerdict.innerHTML = '<small>THE VERDICT</small>' + verdict;
+  el.endRoast.textContent = roast;
+  el.endStats.innerHTML =
+    '🪵 Grabbed <b>' + state.ownGrabbed + '</b> of yer party · ❌ <b>' + state.wrongGrabbed + '</b> wrong grabs' +
+    (result !== 'WIN' ? ' · 🦈 <b>' + state.strikes + '</b> strikes' : '');
+  el.btnShare._shareText = shareText;
+  showScreen('screenEnd');
+}
+
+/* — share — */
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+}
+function doShare(){
+  const text = el.btnShare._shareText || '';
+  if(navigator.share){
+    navigator.share({text: text}).catch(function(){ /* user cancelled */ });
+  } else if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      el.btnShare.textContent = '✅ Copied!';
+      later(function(){ el.btnShare.textContent = '📣 SHARE YER FATE'; }, 2000);
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+    el.btnShare.textContent = '✅ Copied!';
+    later(function(){ el.btnShare.textContent = '📣 SHARE YER FATE'; }, 2000);
+  }
+}
+
+/* — run control — */
+function startRun(partyKey){
+  clearTimers();
+  state.party = partyKey;
+  state.deck = buildDeck(partyKey);
+  state.di = 0;
+  state.plank = null;
+  state.planksSeen = 0;
+  state.raft = 0; state.strikes = 0;
+  state.ownGrabbed = 0; state.wrongGrabbed = 0; state.commieGrabbed = 0; state.ownMissed = 0;
+  state.phase = 'idle'; state.outcome = null;
+  clearRaft();
+  el.pirateWrap.style.display = '';
+  el.handgag.classList.remove('show','wiggle');
+  el.sinkCover.classList.remove('show');
+  el.plankCard.classList.remove('slide-out','grabbed');
+  el.pirateFig.classList.remove('falling','topple','wobble','hop');
+  el.pirateFig.classList.add('peek');
+  renderHud();
+  setAnimating(false);
+  showScreen('screenGame');
+  setFeedback('The captain shoves a plank yer way… grab it if it\'s yers!');
+  later(function(){ nextPlank(); }, 550);
+}
+
+function toOpen(){ clearTimers(); showScreen('screenOpen'); }
+
+/* — modal — */
+function showRules(){ el.modalRules.classList.add('show'); }
+function hideRules(){ el.modalRules.classList.remove('show'); }
+
+/* — events — */
+function bindEvents(){
+  $('btnPlay').addEventListener('click', function(){ showScreen('screenPick'); });
+  $('btnHow').addEventListener('click', showRules);
+  $('btnCloseRules').addEventListener('click', hideRules);
+  el.modalRules.addEventListener('click', function(e){ if(e.target === el.modalRules) hideRules(); });
+  $('btnPickBack').addEventListener('click', toOpen);
+  $('pickR').addEventListener('click', function(){ startRun('R'); });
+  $('pickD').addEventListener('click', function(){ startRun('D'); });
+  $('pickI').addEventListener('click', function(){ startRun('I'); });
+  el.btnGrab.addEventListener('click', handleGrab);
+  el.btnPass.addEventListener('click', handlePass);
+  el.skipAnim.addEventListener('click', function(){
+    if(state.outcome === 'WIN') showEnd('WIN');
+    else if(state.outcome === 'SINK') showEnd('SINK');
+  });
+  el.btnShare.addEventListener('click', doShare);
+  el.btnAgain.addEventListener('click', function(){ startRun(state.party); });
+  $('btnMenu').addEventListener('click', toOpen);
+  el.acatLink.href = ACAT_URL;
+}
+
+/* prevent double-tap zoom */
+document.addEventListener('touchend', function(e){
+  const now = Date.now();
+  if(now - (document._lastTouch || 0) < 300) e.preventDefault();
+  document._lastTouch = now;
+}, {passive:false});
+
+/* ═══════════════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════════════ */
+cacheEls();
+bindEvents();
+const SELF_TEST_PASSED = runSelfTest();
+window.runSelfTest = runSelfTest;
+console.log('🏴‍☠️ Walk-the-Plank (pirate story) loaded. Self-test: ' + (SELF_TEST_PASSED ? 'PASS ✅' : 'FAIL ❌'));
+console.log('📜 ' + PLANKS.length + ' real planks + ' + COMMIE_PLANKS.length + ' Commie gag planks ready.');
+console.log('🔗 ACAT link: ' + ACAT_URL);
+})();
+</script>
+</body>
+</html>
