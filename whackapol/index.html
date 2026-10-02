@@ -1078,6 +1078,9 @@ function startGame(){
   // Init audio on user gesture (required for iOS)
   unlockAudio();
 
+  // Promoter attribution: one beacon per run (2026-10-02). Fire-and-forget; never blocks play.
+  try{ if(window.wapFireRef) window.wapFireRef(); }catch(e){}
+
   // Defensive (2026-09-19): kill any timer still alive from a previous round,
   // so a double-tap on PLAY cannot leave two spawn loops running.
   try{ clearInterval(state.timerId); }catch(e){}
@@ -1504,6 +1507,23 @@ console.log('📊 Republicans: 10 | Democrats: 10 | Independents: 2');
     }catch(e){}
   }
   window.wapPostScore = wapPostScore;
+  /* ── PROMOTER ATTRIBUTION (2026-10-02): one beacon per run.
+     Reads ?ref=<slug> (also #ref=), falls back to "direct". Never blocks the game. ── */
+  function wapRefSlug(){
+    try{
+      var s = String(location.search || '');
+      var m = s.match(/[?&]ref=([^&#]*)/i);
+      if(!m){ var h = String(location.hash || ''); m = h.match(/[#&]ref=([^&#]*)/i); }
+      var v = m ? decodeURIComponent(m[1] || '') : '';
+      v = v.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
+      return v || 'direct';
+    }catch(e){ return 'direct'; }
+  }
+  window.wapFireRef = function(){
+    try{
+      new Image().src = LB_API + '/p?r=' + encodeURIComponent(wapRefSlug()) + '&t=' + Date.now();
+    }catch(e){}
+  };
   function wapRenderNational(host){
     var box = document.createElement('div');
     box.style.marginTop = '18px';
